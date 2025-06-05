@@ -1,0 +1,187 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center items-center py-20">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-bookwise-orange"></div>
+    </div>
+
+    <!-- Book Detail Content -->
+    <div *ngIf="!loading && book" class="bg-white rounded-2xl shadow-lg overflow-hidden">
+      
+      <!-- Back Button -->
+      <div class="p-6 border-b border-gray-200">
+        <button 
+          (click)="goBack()"
+          class="flex items-center text-gray-600 hover:text-bookwise-orange transition-colors">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+          </svg>
+          Back to Browse
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6">
+        
+        <!-- Book Images -->
+        <div class="space-y-4">
+          <!-- Main Image -->
+          <div class="relative aspect-[3/4] bg-gray-200 rounded-xl overflow-hidden">
+            <img 
+              *ngIf="book.bookImages && book.bookImages.length > 0; else bookPlaceholder"
+              [src]="book.bookImages[currentImageIndex]" 
+              [alt]="book.bookName"
+              class="w-full h-full object-cover">
+            
+            <ng-template #bookPlaceholder>
+              <div class="w-full h-full bg-gradient-to-br from-gray-800 to-black flex items-center justify-center">
+                <svg class="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
+                </svg>
+              </div>
+            </ng-template>
+
+            <!-- Image Navigation -->
+            <div *ngIf="book.bookImages && book.bookImages.length > 1" class="absolute inset-0 flex items-center justify-between p-4">
+              <button 
+                (click)="previousImage()"
+                class="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+              </button>
+              <button 
+                (click)="nextImage()"
+                class="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Thumbnail Images -->
+          <div *ngIf="book.bookImages && book.bookImages.length > 1" class="flex space-x-2 overflow-x-auto">
+            <button 
+              *ngFor="let image of book.bookImages; let i = index"
+              (click)="currentImageIndex = i"
+              class="flex-shrink-0 w-16 h-20 rounded-lg overflow-hidden border-2 transition-all"
+              [class.border-bookwise-orange]="currentImageIndex === i"
+              [class.border-gray-300]="currentImageIndex !== i">
+              <img [src]="image" [alt]="book.bookName" class="w-full h-full object-cover">
+            </button>
+          </div>
+        </div>
+
+        <!-- Book Information -->
+        <div class="space-y-6">
+          
+          <!-- Title and Author -->
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ book.bookName }}</h1>
+            <p class="text-xl text-gray-600 mb-4">by {{ book.author }}</p>
+            
+            <!-- Genre and Condition -->
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="px-3 py-1 bg-bookwise-orange bg-opacity-10 text-bookwise-orange rounded-full text-sm font-medium">
+                {{ book.genre }}
+              </span>
+              <span class="px-3 py-1 rounded-full text-sm font-medium" [ngClass]="getConditionColor(book.condition)">
+                {{ book.condition }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+            <p class="text-gray-700 leading-relaxed">{{ book.description }}</p>
+          </div>
+
+          <!-- Book Stats -->
+          <div class="grid grid-cols-2 gap-4 py-4 border-t border-gray-200">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-bookwise-orange">{{ book.view_count || 0 }}</div>
+              <div class="text-sm text-gray-600">Views</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-bookwise-orange">{{ book.created_at | date:'MMM yyyy' }}</div>
+              <div class="text-sm text-gray-600">Added</div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="space-y-3 pt-4 border-t border-gray-200">
+            
+            <!-- Exchange Button -->
+            <button 
+              *ngIf="!isOwner() && !book.is_taken"
+              (click)="requestExchange()"
+              [disabled]="exchangeLoading"
+              class="w-full bg-gradient-to-r from-bookwise-orange to-bookwise-brown text-white py-3 px-6 rounded-xl font-semibold hover:from-bookwise-brown hover:to-bookwise-orange transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 shadow-lg">
+              <span *ngIf="!exchangeLoading" class="flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                Request Exchange
+              </span>
+              <span *ngIf="exchangeLoading" class="flex items-center justify-center">
+                <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Sending Request...
+              </span>
+            </button>
+
+            <!-- Wishlist Button -->
+            <button 
+              *ngIf="!isOwner()"
+              (click)="addToWishlist()"
+              class="w-full bg-white border-2 border-bookwise-orange text-bookwise-orange py-3 px-6 rounded-xl font-semibold hover:bg-bookwise-orange hover:text-white transition-all duration-200 transform hover:scale-105">
+              <span class="flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                Add to Wishlist
+              </span>
+            </button>
+
+            <!-- Owner Message -->
+            <div *ngIf="isOwner()" class="text-center py-4">
+              <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <svg class="w-8 h-8 text-blue-600 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H4C2.9 1 2 1.9 2 3V21C2 22.1 2.9 23 4 23H20C21.1 23 22 22.1 22 21V11L21 9ZM20 21H4V3H14.5L20 8.5V21Z"/>
+                </svg>
+                <p class="text-blue-800 font-medium">This is your book</p>
+                <p class="text-blue-600 text-sm">You can manage it from your profile</p>
+              </div>
+            </div>
+
+            <!-- Taken Message -->
+            <div *ngIf="book.is_taken" class="text-center py-4">
+              <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <svg class="w-8 h-8 text-gray-600 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <p class="text-gray-800 font-medium">This book is currently exchanged</p>
+                <p class="text-gray-600 text-sm">Check back later for availability</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="!loading && !book" class="text-center py-20">
+      <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">Book Not Found</h3>
+      <p class="text-gray-600 mb-4">The book you're looking for doesn't exist or has been removed.</p>
+      <a routerLink="/browse" class="text-bookwise-orange hover:text-bookwise-brown font-medium">
+        Browse Other Books →
+      </a>
+    </div>
+
+  </div>
+</div> 

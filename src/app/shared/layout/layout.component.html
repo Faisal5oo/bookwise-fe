@@ -1,0 +1,145 @@
+<!-- Header Navigation -->
+<nav class="bg-white shadow-sm border-b">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo -->
+      <div class="flex items-center">
+        <div class="flex-shrink-0 flex items-center">
+          <svg class="w-6 h-6 text-bookwise-orange mr-2" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 2c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H6zm0 2h12v16H6V4zm2 2v2h8V6H8zm0 4v2h8v-2H8zm0 4v2h5v-2H8z"/>
+          </svg>
+          <a routerLink="/" class="text-xl font-bold text-bookwise-orange">BookWise</a>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="flex-1 max-w-md mx-8">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <input type="text" placeholder="Search books..." 
+                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bookwise-orange focus:border-transparent">
+        </div>
+      </div>
+
+      <!-- Navigation Links for Logged In Users -->
+      <div *ngIf="isAuthenticated" class="flex items-center space-x-6">
+        <a routerLink="/browse" routerLinkActive="text-bookwise-orange" class="text-gray-700 hover:text-bookwise-orange font-medium transition-colors">Browse</a>
+        <a routerLink="/my-exchanges" routerLinkActive="text-bookwise-orange" class="text-gray-700 hover:text-bookwise-orange font-medium transition-colors">My Exchanges</a>
+        <a routerLink="/ai-picks" routerLinkActive="text-bookwise-orange" class="text-gray-700 hover:text-bookwise-orange font-medium transition-colors">AI Picks</a>
+        
+        <!-- Add Book Button -->
+        <a routerLink="/add-book" class="bg-bookwise-orange hover:bg-bookwise-brown text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          + Add Book
+        </a>
+        
+        <!-- Profile Avatar with Dropdown -->
+        <div class="relative">
+          <button 
+            (click)="toggleProfileDropdown($event)"
+            class="flex items-center space-x-2 text-gray-700 hover:text-bookwise-orange transition-colors focus:outline-none">
+            <div class="w-8 h-8 bg-gradient-to-r from-bookwise-orange to-bookwise-brown rounded-full flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+            </div>
+            <span class="font-medium">{{ currentUser?.fname }}</span>
+            <svg class="w-4 h-4 transition-transform duration-200" [class.rotate-180]="showProfileDropdown" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7 10l5 5 5-5z"/>
+            </svg>
+          </button>
+          
+          <!-- Dropdown Menu -->
+          <div 
+            *ngIf="showProfileDropdown"
+            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 opacity-100 transform translate-y-0 transition-all duration-200">
+            <div class="py-2">
+              <a routerLink="/profile" 
+                 (click)="closeProfileDropdown()"
+                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center">
+                  <svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  Profile
+                </div>
+              </a>
+              <button 
+                (click)="logout()" 
+                class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                <div class="flex items-center">
+                  <svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                  </svg>
+                  Logout
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links for Non-Logged In Users -->
+      <div *ngIf="!isAuthenticated" class="flex items-center space-x-6">
+        <a routerLink="/browse" routerLinkActive="text-bookwise-orange" class="text-gray-700 hover:text-bookwise-orange font-medium transition-colors">Browse</a>
+        
+        <!-- Sign Up Button -->
+        <a routerLink="/auth" class="bg-gradient-to-r from-bookwise-orange to-bookwise-brown text-white px-6 py-2 rounded-lg font-medium hover:from-bookwise-brown hover:to-bookwise-orange transition-all duration-200">
+          Sign Up / Login
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="min-h-screen bg-gray-50">
+  <router-outlet></router-outlet>
+</main>
+
+<!-- Footer -->
+<footer class="bg-gray-800 text-white py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div class="col-span-1 md:col-span-2">
+        <div class="flex items-center mb-4">
+          <svg class="w-6 h-6 text-bookwise-orange mr-2" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 2c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H6zm0 2h12v16H6V4zm2 2v2h8V6H8zm0 4v2h8v-2H8zm0 4v2h5v-2H8z"/>
+          </svg>
+          <span class="text-xl font-bold text-bookwise-orange">BookWise</span>
+        </div>
+        <p class="text-gray-300 mb-4">Join our community of book lovers and exchange your favorite reads. Get personalized AI recommendations based on your preferences.</p>
+      </div>
+      
+      <div>
+        <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+        <ul class="space-y-2">
+          <li><a routerLink="/browse" class="text-gray-300 hover:text-white">Browse Books</a></li>
+          <li *ngIf="isAuthenticated"><a routerLink="/my-exchanges" class="text-gray-300 hover:text-white">My Exchanges</a></li>
+          <li *ngIf="isAuthenticated"><a routerLink="/ai-picks" class="text-gray-300 hover:text-white">AI Picks</a></li>
+          <li *ngIf="isAuthenticated"><a routerLink="/profile" class="text-gray-300 hover:text-white">Profile</a></li>
+          <li *ngIf="!isAuthenticated"><a routerLink="/auth" class="text-gray-300 hover:text-white">Sign Up / Login</a></li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3 class="text-lg font-semibold mb-4">Support</h3>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-gray-300 hover:text-white">Help Center</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">Contact Us</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+      <p class="text-gray-300">&copy; 2024 BookWise. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Chatbot Component - Appears only for logged in users -->
+<app-chatbot *ngIf="isAuthenticated"></app-chatbot> 

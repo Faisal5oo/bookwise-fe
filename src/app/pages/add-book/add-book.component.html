@@ -1,0 +1,171 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-amber-50 py-12">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-bookwise-orange to-bookwise-brown rounded-full mb-4">
+        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+        </svg>
+      </div>
+      <h1 class="text-4xl font-bold text-gray-900 mb-2">Add New Book</h1>
+      <p class="text-gray-600">Share your book with the BookWise community</p>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-xl p-8">
+      <form (ngSubmit)="onSubmit()" class="space-y-8">
+        
+        <div>
+          <label class="block text-lg font-semibold text-gray-900 mb-4">Book Images</label>
+          
+          <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-bookwise-orange transition-colors">
+            <input 
+              type="file" 
+              (change)="onImageSelect($event)"
+              accept="image/*"
+              multiple
+              class="hidden"
+              #fileInput>
+            
+            <div *ngIf="!bookData.bookImages || bookData.bookImages.length === 0">
+              <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <p class="text-gray-600 mb-2">Upload book images</p>
+              <button type="button" (click)="fileInput.click()" class="bg-bookwise-orange text-white px-6 py-2 rounded-lg hover:bg-bookwise-brown transition-colors">
+                Choose Images
+              </button>
+            </div>
+            
+            <div *ngIf="bookData.bookImages && bookData.bookImages.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div *ngFor="let image of bookData.bookImages; let i = index" class="relative group">
+                <img [src]="image" alt="Book preview" class="w-full h-32 object-cover rounded-lg">
+                <button 
+                  type="button"
+                  (click)="removeImage(i)"
+                  class="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  ×
+                </button>
+              </div>
+              
+              <button 
+                type="button" 
+                (click)="fileInput.click()"
+                class="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-bookwise-orange transition-colors">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <div>
+            <label for="bookName" class="block text-sm font-medium text-gray-700 mb-2">Book Name *</label>
+            <input 
+              id="bookName"
+              type="text" 
+              [(ngModel)]="bookData.bookName"
+              name="bookName"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bookwise-orange focus:border-transparent"
+              placeholder="Enter book name">
+          </div>
+
+          <div>
+            <label for="author" class="block text-sm font-medium text-gray-700 mb-2">Author *</label>
+            <input 
+              id="author"
+              type="text" 
+              [(ngModel)]="bookData.author"
+              name="author"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bookwise-orange focus:border-transparent"
+              placeholder="Enter author name">
+          </div>
+
+          <div>
+            <label for="genre" class="block text-sm font-medium text-gray-700 mb-2">Genre *</label>
+            <select 
+              id="genre"
+              [(ngModel)]="bookData.genre"
+              name="genre"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bookwise-orange focus:border-transparent">
+              <option value="">Select a genre</option>
+              <option *ngFor="let genre of genres" [value]="genre">{{ genre }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="condition" class="block text-sm font-medium text-gray-700 mb-2">Condition *</label>
+            <select 
+              id="condition"
+              [(ngModel)]="bookData.condition"
+              name="condition"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bookwise-orange focus:border-transparent">
+              <option *ngFor="let condition of conditions" [value]="condition">{{ condition }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+          <textarea 
+            id="description"
+            [(ngModel)]="bookData.description"
+            name="description"
+            required
+            rows="4"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bookwise-orange focus:border-transparent resize-none"
+            placeholder="Tell us about the book, its condition, and why you'd like to exchange it..."></textarea>
+          <p class="text-sm text-gray-500 mt-1">Minimum 10 characters</p>
+        </div>
+
+        <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {{ errorMessage }}
+        </div>
+
+        <div *ngIf="successMessage" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          {{ successMessage }}
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 pt-6">
+          <button 
+            type="submit"
+            [disabled]="loading"
+            class="flex-1 bg-gradient-to-r from-bookwise-orange to-bookwise-brown text-white py-3 px-6 rounded-lg font-medium hover:from-bookwise-brown hover:to-bookwise-orange transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span *ngIf="!loading">Add Book to Library</span>
+            <span *ngIf="loading" class="flex items-center justify-center">
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Adding Book...
+            </span>
+          </button>
+          
+          <button 
+            type="button"
+            (click)="cancel()"
+            class="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="mt-8 bg-blue-50 rounded-2xl p-6">
+      <h3 class="text-lg font-semibold text-blue-900 mb-3">📚 Tips for Adding Your Book</h3>
+      <ul class="text-blue-800 space-y-2 text-sm">
+        <li>• Upload clear, well-lit photos of your book cover and any notable features</li>
+        <li>• Be honest about the book's condition to set proper expectations</li>
+        <li>• Write a detailed description to help others understand what they're getting</li>
+        <li>• Choose the correct genre to help users find your book easily</li>
+        <li>• Once added, your book will be visible to other users for exchange requests</li>
+      </ul>
+    </div>
+  </div>
+</div> 

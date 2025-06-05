@@ -1,0 +1,188 @@
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-amber-50 to-orange-50 py-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <!-- Left Content -->
+      <div>
+        <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+          Share Books,<br>
+          <span class="text-bookwise-orange">Discover Stories</span>
+        </h1>
+        <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+          Join our community of book lovers and exchange your favorite reads. Get 
+          personalized AI recommendations based on your preferences.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button 
+            (click)="navigateToBrowse()"
+            class="bg-bookwise-brown text-white px-8 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">
+            Browse Books
+          </button>
+          <button 
+            (click)="navigateToAIPicks()"
+            class="border-2 border-bookwise-brown text-bookwise-brown px-8 py-3 rounded-lg font-semibold hover:bg-bookwise-brown hover:text-white transition-colors">
+            AI Recommendations
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Content - Book Stack Image -->
+      <div class="relative">
+        <div class="w-full h-96 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center relative overflow-hidden">
+          <!-- Simulated book stack -->
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="transform rotate-12 space-y-2">
+              <div class="w-48 h-64 bg-gradient-to-r from-blue-600 to-blue-700 rounded shadow-lg border-l-4 border-blue-800"></div>
+            </div>
+            <div class="transform -rotate-6 space-y-2 ml-8">
+              <div class="w-48 h-64 bg-gradient-to-r from-green-600 to-green-700 rounded shadow-lg border-l-4 border-green-800"></div>
+            </div>
+            <div class="transform rotate-3 space-y-2 -ml-12">
+              <div class="w-48 h-64 bg-gradient-to-r from-red-600 to-red-700 rounded shadow-lg border-l-4 border-red-800"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Books Section -->
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-3xl font-bold text-gray-900">Featured Books</h2>
+      <button 
+        (click)="navigateToBrowse()" 
+        class="text-bookwise-orange hover:underline font-medium">View All →</button>
+    </div>
+
+    <!-- Loading state -->
+    <div *ngIf="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div *ngFor="let item of [1,2,3,4]" class="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+        <div class="h-64 bg-gray-300"></div>
+        <div class="p-4">
+          <div class="h-4 bg-gray-300 rounded mb-2"></div>
+          <div class="h-3 bg-gray-300 rounded mb-2"></div>
+          <div class="h-6 bg-gray-300 rounded w-20"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Books grid -->
+    <div *ngIf="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div 
+        *ngFor="let book of featuredBooks; trackBy: trackByBookId" 
+        (click)="onBookClick(book)"
+        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+        <div class="h-64 bg-gradient-to-br from-gray-800 to-black flex items-center justify-center">
+          <div *ngIf="book.bookImages && book.bookImages.length > 0; else defaultCover">
+            <img [src]="book.bookImages[0]" [alt]="book.bookName" class="w-full h-full object-cover">
+          </div>
+          <ng-template #defaultCover>
+            <div class="text-white text-center p-4">
+              <div class="text-sm font-light mb-2">{{ book.author }}</div>
+              <div class="text-lg font-bold">{{ book.bookName }}</div>
+              <div class="w-12 h-12 mx-auto mt-4 border-2 border-white rounded-full flex items-center justify-center">
+                <div class="w-6 h-6 bg-white rounded-full"></div>
+              </div>
+            </div>
+          </ng-template>
+        </div>
+        <div class="p-4">
+          <h3 class="font-semibold text-gray-900 mb-1">{{ book.bookName }}</h3>
+          <p class="text-gray-600 text-sm mb-2">{{ book.author }}</p>
+          <span [class]="'inline-block px-2 py-1 text-xs rounded-full ' + getConditionClass(book.condition)">
+            {{ book.condition }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI Recommendations Section -->
+<section class="py-16 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-2">
+      <h2 class="text-3xl font-bold text-gray-900">AI Recommendations For You</h2>
+      <button 
+        (click)="navigateToAIPicks()" 
+        class="text-bookwise-orange hover:underline font-medium">More Recommendations →</button>
+    </div>
+    <p class="text-gray-600 mb-8">Personalized suggestions based on your reading preferences</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Default recommendations when no data -->
+      <div *ngFor="let recommendation of aiRecommendations" class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex gap-4">
+          <div class="w-24 h-32 bg-gradient-to-br from-green-400 to-blue-500 rounded flex-shrink-0 flex items-center justify-center">
+            <div class="w-16 h-24 bg-white rounded shadow-md flex items-center justify-center">
+              <div class="text-gray-800 text-center text-xs">{{ recommendation.bookName }}</div>
+            </div>
+          </div>
+          <div class="flex-1">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="text-lg font-semibold text-gray-900">{{ recommendation.bookName }}</h3>
+              <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
+                {{ recommendation.match_percentage }}% Match
+              </span>
+            </div>
+            <p class="text-gray-600 text-sm mb-3">{{ recommendation.author }}</p>
+            <p class="text-gray-700 text-sm mb-4 italic">
+              "{{ recommendation.reason }}"
+            </p>
+            <p class="text-xs text-gray-500 mb-4">- AI Recommendation</p>
+            <button 
+              (click)="navigateToBookDetail(recommendation.id)"
+              class="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+              View Book
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 class="text-3xl font-bold text-gray-900 mb-12">How It Works</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Step 1 -->
+      <div class="text-center">
+        <div class="w-16 h-16 bg-bookwise-orange rounded-lg flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 2c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H6zm0 2h12v16H6V4zm2 2v2h8V6H8zm0 4v2h8v-2H8zm0 4v2h5v-2H8z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">List Your Books</h3>
+        <p class="text-gray-600">Add books to your collection that you're willing to exchange with others.</p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="text-center">
+        <div class="w-16 h-16 bg-bookwise-orange rounded-lg flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Discover Books</h3>
+        <p class="text-gray-600">Browse through our community's collection and find your next great read.</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="text-center">
+        <div class="w-16 h-16 bg-bookwise-orange rounded-lg flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Exchange & Enjoy</h3>
+        <p class="text-gray-600">Connect with book lovers and exchange your favorite stories.</p>
+      </div>
+    </div>
+  </div>
+</section> 

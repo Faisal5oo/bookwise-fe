@@ -1,0 +1,101 @@
+/* Book Detail component styles - modern 2025 design */
+
+.prose {
+  max-width: none;
+}
+
+.prose p {
+  line-height: 1.75;
+  font-size: 1.125rem;
+  color: #374151;
+}
+
+/* Tab animations */
+.tab-content {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Hover effects for cards */
+.group:hover .transform {
+  transform: scale(1.02) translateY(-4px);
+}
+
+/* Custom scrollbar for long descriptions */
+.prose::-webkit-scrollbar {
+  width: 6px;
+}
+
+.prose::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.prose::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.prose::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Enhanced button hover effects */
+button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Book cover shadow effect */
+img {
+  transition: all 0.3s ease;
+}
+
+img:hover {
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.25);
+}
+
+/* Rating stars animation */
+.rating-stars svg {
+  transition: transform 0.2s ease;
+}
+
+.rating-stars:hover svg {
+  transform: scale(1.1);
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+} 

@@ -1,0 +1,11 @@
+// Add Book Component Styles
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+input[type="file"]:hover + .upload-area {
+  border-color: #f97316;
+} 
