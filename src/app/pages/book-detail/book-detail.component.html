@@ -79,15 +79,15 @@
           <!-- Title and Author -->
           <div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ book.bookName }}</h1>
-            <p class="text-xl text-gray-600 mb-4">by {{ book.author }}</p>
+            <p class="text-xl text-gray-600 mb-4">by {{ book.authorName || book.author }}</p>
             
             <!-- Genre and Condition -->
             <div class="flex flex-wrap gap-2 mb-4">
               <span class="px-3 py-1 bg-bookwise-orange bg-opacity-10 text-bookwise-orange rounded-full text-sm font-medium">
                 {{ book.genre }}
               </span>
-              <span class="px-3 py-1 rounded-full text-sm font-medium" [ngClass]="getConditionColor(book.condition)">
-                {{ book.condition }}
+              <span class="px-3 py-1 rounded-full text-sm font-medium" [ngClass]="getConditionColor(book.bookCondition || book.condition || '')">
+                {{ book.bookCondition || book.condition }}
               </span>
             </div>
           </div>

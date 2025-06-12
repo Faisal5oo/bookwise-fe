@@ -1,0 +1,21 @@
+// Custom styles for edit-book component
+.bookwise-orange {
+  color: #f97316;
+}
+
+.bookwise-brown {
+  color: #92400e;
+}
+
+// Custom radio button styling
+input[type="radio"] {
+  &:checked {
+    background-color: #f97316;
+    border-color: #f97316;
+  }
+  
+  &:focus {
+    ring-color: #f97316;
+    ring-opacity: 0.5;
+  }
+} 

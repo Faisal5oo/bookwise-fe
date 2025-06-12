@@ -5,6 +5,7 @@ import { BookService } from '../../shared/services/book.service';
 import { AuthService } from '../../shared/services/auth.service';
 import { ExchangeService } from '../../shared/services/exchange.service';
 import { Book } from '../../shared/models/book.model';
+import { ExchangeRequest } from '../../shared/models/exchange.model';
 
 @Component({
   selector: 'app-book-detail',
@@ -81,9 +82,10 @@ export class BookDetailComponent implements OnInit {
 
     this.exchangeLoading = true;
     
-    const exchangeRequest = {
-      book_id: this.book.id,
-      owner_id: this.book.owner_id,
+    const exchangeRequest: ExchangeRequest = {
+      requester_id: this.currentUserId,
+      book_id: this.book._id || this.book.book_id || '',
+      owner_id: this.book.user_id || this.book.owner_id || '',
       message: `I would like to exchange this book: ${this.book.bookName}`
     };
 
@@ -109,7 +111,10 @@ export class BookDetailComponent implements OnInit {
 
     if (!this.book) return;
 
-    this.bookService.trackInteraction(this.book.id, 'wishlist').subscribe({
+    const bookId = this.book._id || this.book.book_id;
+    if (!bookId) return;
+    
+    this.bookService.trackInteraction(bookId, 'wishlist').subscribe({
       next: () => {
         alert('Added to wishlist!');
       },
@@ -142,6 +147,6 @@ export class BookDetailComponent implements OnInit {
   }
 
   isOwner(): boolean {
-    return this.book?.owner_id === this.currentUserId;
+    return this.book?.user_id === this.currentUserId || this.book?.owner_id === this.currentUserId;
   }
 } 

@@ -1,14 +1,28 @@
-export type ExchangeStatus = 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
-export type ExchangeResponseType = 'accepted' | 'declined' | 'completed';
+export enum ExchangeStatus {
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  DECLINED = 'declined',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
+}
+
+export interface ExchangeRequest {
+  requester_id: string;
+  book_id: string;
+  owner_id: string;
+  message?: string;
+  status?: ExchangeStatus;
+  created_at?: string;
+}
 
 export interface ExchangeResponse {
   exchange_id: string;
-  response_type: ExchangeResponseType;
+  response_type: ExchangeStatus;
   message?: string;
-  created_at: string;
+  created_at?: string;
 }
 
-export interface Exchange {
+export interface ExchangeDetails {
   id: string;
   requester_id: string;
   book_id: string;
@@ -17,10 +31,17 @@ export interface Exchange {
   status: ExchangeStatus;
   created_at: string;
   response?: ExchangeResponse;
+  
+  // Additional fields for UI display
+  book_name?: string;
+  book_author?: string;
+  book_image?: string;
+  requester_name?: string;
+  owner_name?: string;
 }
 
-export interface ExchangeRequest {
-  book_id: string;
-  owner_id: string;
-  message?: string;
+// API Response wrapper
+export interface ExchangeApiResponse {
+  exchanges: ExchangeDetails[];
+  total_exchanges: number;
 } 

@@ -1,63 +1,175 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Exchange, ExchangeRequest, ExchangeResponse } from '../models/exchange.model';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { 
+  ExchangeRequest, 
+  ExchangeResponse, 
+  ExchangeDetails, 
+  ExchangeStatus,
+  ExchangeApiResponse 
+} from '../models/exchange.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExchangeService {
-  private apiUrl = `${environment.apiUrl}/exchanges`;
+  private apiUrl = environment.apiUrl || 'http://localhost:8000';
 
   constructor(private http: HttpClient) {}
 
-  // Request a book exchange
-  requestExchange(request: ExchangeRequest): Observable<Exchange> {
-    return this.http.post<Exchange>(`${this.apiUrl}/request`, request);
+  /**
+   * Request an exchange for a book
+   */
+  requestExchange(exchangeRequest: ExchangeRequest): Observable<ExchangeDetails> {
+    return this.http.post<ExchangeDetails>(`${this.apiUrl}/exchanges/request`, exchangeRequest)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
-  // Get user's exchanges
-  getUserExchanges(userId: string, status?: string, skip = 0, limit = 10): Observable<Exchange[]> {
-    let url = `${this.apiUrl}/user/${userId}?skip=${skip}&limit=${limit}`;
+  /**
+   * Get all exchanges for a user (both sent and received)
+   */
+  getUserExchanges(
+    userId: string, 
+    status?: ExchangeStatus, 
+    skip: number = 0, 
+    limit: number = 10
+  ): Observable<ExchangeDetails[]> {
+    let params = new HttpParams()
+      .set('skip', skip.toString())
+      .set('limit', limit.toString());
+    
     if (status) {
-      url += `&status=${status}`;
+      params = params.set('status', status);
     }
-    return this.http.get<Exchange[]>(url);
+
+    return this.http.get<ExchangeDetails[]>(`${this.apiUrl}/exchanges/user/${userId}`, { params })
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
-  // Get exchange details
-  getExchange(id: string): Observable<Exchange> {
-    return this.http.get<Exchange>(`${this.apiUrl}/${id}`);
+  /**
+   * Respond to an exchange request (accept/decline)
+   */
+  respondToExchange(exchangeId: string, response: ExchangeResponse): Observable<ExchangeDetails> {
+    return this.http.put<ExchangeDetails>(`${this.apiUrl}/exchanges/${exchangeId}/respond`, response)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
-  // Respond to exchange request
-  respondToExchange(exchangeId: string, response: ExchangeResponse): Observable<Exchange> {
-    return this.http.put<Exchange>(`${this.apiUrl}/${exchangeId}/respond`, response);
+  /**
+   * Get exchanges where user is the requester
+   */
+  getSentExchanges(userId: string, status?: ExchangeStatus): Observable<ExchangeDetails[]> {
+    return this.getUserExchanges(userId, status).pipe(
+      map(exchanges => exchanges.filter(exchange => exchange.requester_id === userId))
+    );
   }
 
-  // Complete exchange
-  completeExchange(exchangeId: string): Observable<Exchange> {
-    return this.http.post<Exchange>(`${this.apiUrl}/${exchangeId}/complete`, {});
+  /**
+   * Get exchanges where user is the owner
+   */
+  getReceivedExchanges(userId: string, status?: ExchangeStatus): Observable<ExchangeDetails[]> {
+    return this.getUserExchanges(userId, status).pipe(
+      map(exchanges => exchanges.filter(exchange => exchange.owner_id === userId))
+    );
   }
 
-  // Get exchange statistics
-  getExchangeStatistics(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/statistics`);
+  /**
+   * Get pending exchanges that need user's response
+   */
+  getPendingExchanges(userId: string): Observable<ExchangeDetails[]> {
+    return this.getReceivedExchanges(userId, ExchangeStatus.PENDING);
   }
 
-  // Rate exchange partner
-  rateExchange(exchangeId: string, rating: number, comment?: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${exchangeId}/rating`, { rating, comment });
+  /**
+   * Accept an exchange request
+   */
+  acceptExchange(exchangeId: string, message?: string): Observable<ExchangeDetails> {
+    const response: ExchangeResponse = {
+      exchange_id: exchangeId,
+      response_type: ExchangeStatus.ACCEPTED,
+      message: message || 'Exchange request accepted!',
+      created_at: new Date().toISOString()
+    };
+    
+    return this.respondToExchange(exchangeId, response);
   }
 
-  // Get user's exchange history
-  getUserExchangeHistory(userId: string): Observable<Exchange[]> {
-    return this.http.get<Exchange[]>(`${this.apiUrl}/user/${userId}/exchange-history`);
+  /**
+   * Decline an exchange request
+   */
+  declineExchange(exchangeId: string, message?: string): Observable<ExchangeDetails> {
+    const response: ExchangeResponse = {
+      exchange_id: exchangeId,
+      response_type: ExchangeStatus.DECLINED,
+      message: message || 'Exchange request declined.',
+      created_at: new Date().toISOString()
+    };
+    
+    return this.respondToExchange(exchangeId, response);
   }
 
-  // Report exchange dispute
-  reportDispute(exchangeId: string, reason: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${exchangeId}/dispute`, { reason });
+  /**
+   * Mark exchange as completed
+   */
+  completeExchange(exchangeId: string, message?: string): Observable<ExchangeDetails> {
+    const response: ExchangeResponse = {
+      exchange_id: exchangeId,
+      response_type: ExchangeStatus.COMPLETED,
+      message: message || 'Exchange completed successfully!',
+      created_at: new Date().toISOString()
+    };
+    
+    return this.respondToExchange(exchangeId, response);
+  }
+
+  /**
+   * Cancel an exchange request
+   */
+  cancelExchange(exchangeId: string, message?: string): Observable<ExchangeDetails> {
+    const response: ExchangeResponse = {
+      exchange_id: exchangeId,
+      response_type: ExchangeStatus.CANCELLED,
+      message: message || 'Exchange request cancelled.',
+      created_at: new Date().toISOString()
+    };
+    
+    return this.respondToExchange(exchangeId, response);
+  }
+
+  /**
+   * Handle HTTP errors
+   */
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'An unknown error occurred';
+    
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Error: ${error.error.message}`;
+    } else {
+      // Server-side error
+      if (error.error && error.error.detail) {
+        if (Array.isArray(error.error.detail)) {
+          errorMessage = error.error.detail.map((detail: any) => 
+            typeof detail === 'string' ? detail : detail.msg || JSON.stringify(detail)
+          ).join(', ');
+        } else {
+          errorMessage = error.error.detail;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else {
+        errorMessage = `Error Code: ${error.status}\nMessage: ${error.statusText}`;
+      }
+    }
+    
+    console.error('Exchange Service Error:', error);
+    return throwError(() => new Error(errorMessage));
   }
 } 

@@ -35,6 +35,11 @@ export const routes: Routes = [
         canActivate: [AuthGuard]
       },
       {
+        path: 'edit-book/:id',
+        loadComponent: () => import('./pages/edit-book/edit-book.component').then(m => m.EditBookComponent),
+        canActivate: [AuthGuard]
+      },
+      {
         path: 'book/:id',
         loadComponent: () => import('./pages/book-detail/book-detail.component').then(m => m.BookDetailComponent)
       },

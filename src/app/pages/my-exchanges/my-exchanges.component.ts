@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { ExchangeService } from '../../shared/services/exchange.service';
 import { BookService } from '../../shared/services/book.service';
 import { AuthService } from '../../shared/services/auth.service';
-import { Exchange, ExchangeRequest } from '../../shared/models/exchange.model';
+import { ExchangeDetails, ExchangeRequest, ExchangeStatus, ExchangeResponse } from '../../shared/models/exchange.model';
 import { Book } from '../../shared/models/book.model';
 
 @Component({
@@ -23,9 +23,9 @@ export class MyExchangesComponent implements OnInit {
   currentUserId = '';
   
   // Exchange data
-  sentExchanges: Exchange[] = [];
-  receivedExchanges: Exchange[] = [];
-  exchangeHistory: Exchange[] = [];
+  sentExchanges: ExchangeDetails[] = [];
+  receivedExchanges: ExchangeDetails[] = [];
+  exchangeHistory: ExchangeDetails[] = [];
   
   // Books for reference
   availableBooks: Book[] = [];
@@ -61,11 +61,11 @@ export class MyExchangesComponent implements OnInit {
     this.loading = true;
     try {
       // Load sent exchanges
-      this.exchangeService.getUserExchanges(this.currentUserId, 'pending').subscribe({
-        next: (exchanges) => {
+      this.exchangeService.getUserExchanges(this.currentUserId, ExchangeStatus.PENDING).subscribe({
+        next: (exchanges: ExchangeDetails[]) => {
           this.sentExchanges = exchanges.filter(ex => ex.requester_id === this.currentUserId);
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading sent exchanges:', error);
           this.setMockExchanges();
         }
@@ -73,28 +73,34 @@ export class MyExchangesComponent implements OnInit {
 
       // Load received exchanges
       this.exchangeService.getUserExchanges(this.currentUserId).subscribe({
-        next: (exchanges) => {
+        next: (exchanges: ExchangeDetails[]) => {
           this.receivedExchanges = exchanges.filter(ex => ex.owner_id === this.currentUserId);
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading received exchanges:', error);
         }
       });
 
-      // Load exchange history
-      this.exchangeService.getUserExchangeHistory(this.currentUserId).subscribe({
-        next: (history) => {
-          this.exchangeHistory = history;
+      // Load exchange history - using the same method with no status filter
+      this.exchangeService.getUserExchanges(this.currentUserId).subscribe({
+        next: (history: ExchangeDetails[]) => {
+          this.exchangeHistory = history.filter(ex => 
+            ex.status === ExchangeStatus.COMPLETED || 
+            ex.status === ExchangeStatus.DECLINED || 
+            ex.status === ExchangeStatus.CANCELLED
+          );
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading exchange history:', error);
         }
       });
 
       // Load available books for new exchanges
       this.bookService.getBooks(0, 50).subscribe({
-        next: (books) => {
-          this.availableBooks = books.filter(book => book.owner_id !== this.currentUserId && !book.is_taken);
+        next: (response) => {
+          this.availableBooks = (response.books || []).filter(book => 
+            (book.user_id || book.owner_id) !== this.currentUserId && !book.is_taken
+          );
         },
         error: (error) => {
           console.error('Error loading available books:', error);
@@ -117,7 +123,7 @@ export class MyExchangesComponent implements OnInit {
         book_id: 'book1',
         owner_id: 'user2',
         message: 'I would love to read this book!',
-        status: 'pending',
+        status: ExchangeStatus.PENDING,
         created_at: new Date().toISOString()
       },
       {
@@ -126,7 +132,7 @@ export class MyExchangesComponent implements OnInit {
         book_id: 'book2',
         owner_id: 'user3',
         message: 'This looks interesting, would like to exchange',
-        status: 'accepted',
+        status: ExchangeStatus.ACCEPTED,
         created_at: new Date(Date.now() - 86400000).toISOString()
       }
     ];
@@ -138,7 +144,7 @@ export class MyExchangesComponent implements OnInit {
         book_id: 'book3',
         owner_id: this.currentUserId,
         message: 'Can I borrow this book please?',
-        status: 'pending',
+        status: ExchangeStatus.PENDING,
         created_at: new Date().toISOString()
       }
     ];
@@ -178,8 +184,9 @@ export class MyExchangesComponent implements OnInit {
     }
 
     const request: ExchangeRequest = {
-      book_id: book.id,
-      owner_id: book.owner_id,
+      requester_id: this.currentUserId,
+      book_id: book._id || book.book_id || '',
+      owner_id: book.user_id || book.owner_id || '',
       message: message || 'I would like to exchange this book'
     };
 
@@ -197,48 +204,47 @@ export class MyExchangesComponent implements OnInit {
   }
 
   // Respond to an exchange request
-  respondToExchange(exchange: Exchange, responseType: 'accepted' | 'declined', message?: string) {
-    // Check authentication
-    if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/auth']);
-      return;
-    }
-
-    const response = {
+  respondToExchange(exchange: ExchangeDetails, responseType: ExchangeStatus, message?: string) {
+    const response: ExchangeResponse = {
       exchange_id: exchange.id,
       response_type: responseType,
-      message: message || '',
+      message: message || (responseType === ExchangeStatus.ACCEPTED ? 'Exchange accepted!' : 'Exchange declined.'),
       created_at: new Date().toISOString()
     };
 
     this.exchangeService.respondToExchange(exchange.id, response).subscribe({
       next: (updatedExchange) => {
         console.log('Exchange response sent:', updatedExchange);
-        // Update the local data
+        
+        // Update the exchange in our local array
         const index = this.receivedExchanges.findIndex(ex => ex.id === exchange.id);
         if (index > -1) {
           this.receivedExchanges[index] = updatedExchange;
         }
-        alert(`Exchange ${responseType} successfully!`);
+        
+        alert(`Exchange ${responseType}!`);
       },
       error: (error) => {
         console.error('Error responding to exchange:', error);
-        alert('Error sending response. Please try again.');
+        alert('Error responding to exchange. Please try again.');
       }
     });
   }
 
   // Complete an exchange
-  completeExchange(exchange: Exchange) {
-    this.exchangeService.completeExchange(exchange.id).subscribe({
-      next: (completedExchange) => {
-        console.log('Exchange completed:', completedExchange);
+  completeExchange(exchange: ExchangeDetails) {
+    this.exchangeService.completeExchange(exchange.id, 'Exchange completed successfully!').subscribe({
+      next: (updatedExchange) => {
+        console.log('Exchange completed:', updatedExchange);
+        
         // Move to history
-        this.exchangeHistory.push(completedExchange);
+        this.exchangeHistory.push(updatedExchange);
+        
         // Remove from active exchanges
         this.sentExchanges = this.sentExchanges.filter(ex => ex.id !== exchange.id);
         this.receivedExchanges = this.receivedExchanges.filter(ex => ex.id !== exchange.id);
-        alert('Exchange completed successfully!');
+        
+        alert('Exchange completed!');
       },
       error: (error) => {
         console.error('Error completing exchange:', error);
@@ -247,16 +253,18 @@ export class MyExchangesComponent implements OnInit {
     });
   }
 
-  getStatusClass(status: string): string {
+  getStatusClass(status: ExchangeStatus): string {
     switch (status) {
-      case 'pending':
+      case ExchangeStatus.PENDING:
         return 'bg-yellow-100 text-yellow-800';
-      case 'accepted':
+      case ExchangeStatus.ACCEPTED:
         return 'bg-green-100 text-green-800';
-      case 'declined':
+      case ExchangeStatus.DECLINED:
         return 'bg-red-100 text-red-800';
-      case 'completed':
+      case ExchangeStatus.COMPLETED:
         return 'bg-blue-100 text-blue-800';
+      case ExchangeStatus.CANCELLED:
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -265,18 +273,21 @@ export class MyExchangesComponent implements OnInit {
   getRelativeTime(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    
-    return date.toLocaleDateString();
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
   }
 
-  trackByExchangeId(index: number, exchange: Exchange): string {
+  trackByExchangeId(index: number, exchange: ExchangeDetails): string {
     return exchange.id;
   }
 } 

@@ -39,9 +39,9 @@ export class HomeComponent implements OnInit {
     this.loading = true;
     try {
       // Load featured books
-      this.bookService.getFeaturedBooks(4).subscribe({
-        next: (books) => {
-          this.featuredBooks = books;
+      this.bookService.getFeaturedBooks().subscribe({
+        next: (response) => {
+          this.featuredBooks = response.books?.slice(0, 4) || [];
         },
         error: (error) => {
           console.error('Error loading featured books:', error);
@@ -81,56 +81,60 @@ export class HomeComponent implements OnInit {
   setMockFeaturedBooks() {
     this.featuredBooks = [
       {
-        id: '1',
+        _id: '1',
+        book_id: '1',
+        user_id: 'user1',
         bookName: 'The Great Gatsby',
+        authorName: 'F. Scott Fitzgerald',
         description: 'A classic American novel',
-        bookImages: [],
-        owner_id: 'user1',
-        genre: 'Classic',
-        author: 'F. Scott Fitzgerald',
-        condition: 'Very Good',
+        bookCondition: 'Very Good',
+        bookImages: ['https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop'],
         is_taken: false,
         created_at: new Date().toISOString(),
-        view_count: 120
+        view_count: 120,
+        genre: 'Classic'
       },
       {
-        id: '2',
+        _id: '2',
+        book_id: '2',
+        user_id: 'user2',
         bookName: 'To Kill a Mockingbird',
+        authorName: 'Harper Lee',
         description: 'A gripping tale of racial injustice',
-        bookImages: [],
-        owner_id: 'user2',
-        genre: 'Classic',
-        author: 'Harper Lee',
-        condition: 'Good',
+        bookCondition: 'Good',
+        bookImages: ['https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=200&h=300&fit=crop'],
         is_taken: false,
         created_at: new Date().toISOString(),
-        view_count: 95
+        view_count: 95,
+        genre: 'Classic'
       },
       {
-        id: '3',
+        _id: '3',
+        book_id: '3',
+        user_id: 'user3',
         bookName: 'The Hobbit',
+        authorName: 'J.R.R. Tolkien',
         description: 'An unexpected journey',
-        bookImages: [],
-        owner_id: 'user3',
-        genre: 'Fantasy',
-        author: 'J.R.R. Tolkien',
-        condition: 'Good',
+        bookCondition: 'Good',
+        bookImages: ['https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?w=200&h=300&fit=crop'],
         is_taken: false,
         created_at: new Date().toISOString(),
-        view_count: 150
+        view_count: 150,
+        genre: 'Fantasy'
       },
       {
-        id: '4',
+        _id: '4',
+        book_id: '4',
+        user_id: 'user4',
         bookName: 'Pride and Prejudice',
+        authorName: 'Jane Austen',
         description: 'A romantic classic',
-        bookImages: [],
-        owner_id: 'user4',
-        genre: 'Romance',
-        author: 'Jane Austen',
-        condition: 'Acceptable',
+        bookCondition: 'Acceptable',
+        bookImages: ['https://images.unsplash.com/photo-1512820790803-83ca734da794?w=200&h=300&fit=crop'],
         is_taken: false,
         created_at: new Date().toISOString(),
-        view_count: 80
+        view_count: 80,
+        genre: 'Romance'
       }
     ];
   }
@@ -177,20 +181,26 @@ export class HomeComponent implements OnInit {
   trackBookView(book: Book) {
     // Only track if user is logged in
     if (this.authService.isAuthenticated()) {
-      this.bookService.trackInteraction(book.id, 'view').subscribe({
-        next: () => {
-          // Track interaction successfully
-        },
-        error: (error) => {
-          console.error('Error tracking book view:', error);
-        }
-      });
+      const bookId = book._id || book.book_id;
+      if (bookId) {
+        this.bookService.trackInteraction(bookId, 'view').subscribe({
+          next: () => {
+            // Track interaction successfully
+          },
+          error: (error) => {
+            console.error('Error tracking book view:', error);
+          }
+        });
+      }
     }
   }
 
   onBookClick(book: Book) {
     this.trackBookView(book);
-    this.navigateToBookDetail(book.id);
+    const bookId = book._id || book.book_id;
+    if (bookId) {
+      this.navigateToBookDetail(bookId);
+    }
   }
 
   getConditionClass(condition: string): string {
@@ -207,6 +217,6 @@ export class HomeComponent implements OnInit {
   }
 
   trackByBookId(index: number, book: Book): string {
-    return book.id;
+    return book._id || book.book_id || index.toString();
   }
 }

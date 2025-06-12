@@ -153,58 +153,61 @@ export class AiPicksComponent implements OnInit {
   setMockFeaturedBooks() {
     this.featuredBooks = [
       {
-        id: '1',
+        _id: '507f1f77bcf86cd799439011',
+        book_id: '507f1f77bcf86cd799439011',
+        user_id: '507f1f77bcf86cd799439001',
         bookName: "The Seven Husbands of Evelyn Hugo",
-        author: "Taylor Jenkins Reid",
+        authorName: "Taylor Jenkins Reid",
+        bookCondition: 'Very Good',
         bookImages: ["https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=450&fit=crop"],
+        description: "A captivating novel about a reclusive Hollywood icon",
+        is_taken: false,
+        created_at: new Date().toISOString(),
+        view_count: 150,
+        genre: "Historical Fiction",
         rating: 4.8,
         aiMatch: 97,
         aiReason: "Perfect match based on your love for character-driven stories",
-        genre: "Historical Fiction",
         pages: 400,
-        aiAnalysis: "Our AI detected you enjoy complex character development and Hollywood glamour stories.",
-        description: "A captivating novel about a reclusive Hollywood icon",
-        owner_id: 'user1',
-        condition: 'Very Good',
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 150
+        aiAnalysis: "Our AI detected you enjoy complex character development and Hollywood glamour stories."
       },
       {
-        id: '2',
+        _id: '507f1f77bcf86cd799439012',
+        book_id: '507f1f77bcf86cd799439012',
+        user_id: '507f1f77bcf86cd799439002',
         bookName: "Project Hail Mary",
-        author: "Andy Weir",
+        authorName: "Andy Weir",
+        bookCondition: 'Good',
         bookImages: ["https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300&h=450&fit=crop"],
+        description: "A lone astronaut must save humanity",
+        is_taken: false,
+        created_at: new Date().toISOString(),
+        view_count: 200,
+        genre: "Science Fiction",
         rating: 4.9,
         aiMatch: 94,
         aiReason: "Matches your preference for science fiction with heart",
-        genre: "Science Fiction",
         pages: 496,
-        aiAnalysis: "Your reading history shows strong interest in problem-solving narratives and space exploration.",
-        description: "A lone astronaut must save humanity",
-        owner_id: 'user2',
-        condition: 'Good',
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 200
+        aiAnalysis: "Your reading history shows strong interest in problem-solving narratives and space exploration."
       },
       {
-        id: '3',
+        _id: '507f1f77bcf86cd799439013',
+        book_id: '507f1f77bcf86cd799439013',
+        user_id: '507f1f77bcf86cd799439003',
         bookName: "The Midnight Library",
-        author: "Matt Haig",
+        authorName: "Matt Haig",
+        bookCondition: 'Very Good',
         bookImages: ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop"],
+        description: "Between life and death lies the Midnight Library",
+        is_taken: false,
+        created_at: new Date().toISOString(),
+        view_count: 175,
+        genre: "Fantasy/Philosophy",
         rating: 4.6,
         aiMatch: 91,
         aiReason: "Aligns with your interest in philosophical and uplifting themes",
-        genre: "Fantasy/Philosophy",
         pages: 288,
-        aiAnalysis: "AI analysis shows you gravitate toward books exploring life's possibilities and personal growth.",
-        description: "Between life and death lies the Midnight Library",
-        owner_id: 'user3',
-        condition: 'Very Good',
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 175
+        aiAnalysis: "AI analysis shows you gravitate toward books exploring life's possibilities and personal growth."
       }
     ];
   }
@@ -212,58 +215,66 @@ export class AiPicksComponent implements OnInit {
   setMockTrendingBooks() {
     this.trendingBooks = [
       {
-        id: '4',
+        _id: '507f1f77bcf86cd799439014',
+        book_id: '507f1f77bcf86cd799439014',
+        user_id: '507f1f77bcf86cd799439004',
         bookName: "Circe",
-        author: "Madeline Miller",
+        authorName: "Madeline Miller",
+        bookCondition: 'Good',
         bookImages: ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300&h=450&fit=crop"],
+        description: "The witch Circe's story of transformation and power",
+        is_taken: false,
+        created_at: new Date().toISOString(),
+        view_count: 120,
+        genre: "Mythology/Fantasy",
         rating: 4.7,
         aiMatch: 89,
         aiReason: "Mythology retellings match your literary preferences",
-        genre: "Mythology/Fantasy",
         pages: 393,
-        aiAnalysis: "Pattern recognition indicates strong affinity for reimagined classical stories.",
-        description: "The witch Circe's story of transformation and power",
-        owner_id: 'user4',
-        condition: 'Good',
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 120
+        aiAnalysis: "Pattern recognition indicates strong affinity for reimagined classical stories."
       },
       {
-        id: '5',
+        _id: '507f1f77bcf86cd799439015',
+        book_id: '507f1f77bcf86cd799439015',
+        user_id: '507f1f77bcf86cd799439005',
         bookName: "Klara and the Sun",
-        author: "Kazuo Ishiguro",
+        authorName: "Kazuo Ishiguro",
+        bookCondition: 'Very Good',
         bookImages: ["https://images.unsplash.com/photo-1589998059171-988d887df646?w=300&h=450&fit=crop"],
+        description: "An artificial friend observes the world with wonder",
+        is_taken: false,
+        created_at: new Date().toISOString(),
+        view_count: 95,
+        genre: "Literary Fiction",
         rating: 4.5,
         aiMatch: 86,
         aiReason: "Literary fiction with emotional depth",
-        genre: "Literary Fiction",
         pages: 303,
-        aiAnalysis: "Your preference for nuanced storytelling aligns with Ishiguro's style.",
-        description: "An artificial friend observes the world with wonder",
-        owner_id: 'user5',
-        condition: 'Very Good',
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 95
+        aiAnalysis: "Your preference for nuanced storytelling aligns with Ishiguro's style."
       }
     ];
   }
 
   viewBookDetails(book: EnhancedBook) {
-    this.bookService.trackInteraction(book.id, 'view').subscribe();
-    this.router.navigate(['/book', book.id]);
+    const bookId = book._id || book.book_id;
+    if (bookId) {
+      this.bookService.trackInteraction(bookId, 'view').subscribe();
+      this.router.navigate(['/book', bookId]);
+    }
   }
 
   addToWishlist(book: EnhancedBook) {
-    this.bookService.trackInteraction(book.id, 'wishlist').subscribe({
-      next: () => {
-        console.log('Added to wishlist:', book.bookName);
-      },
-      error: (error) => {
-        console.error('Error adding to wishlist:', error);
-      }
-    });
+    const bookId = book._id || book.book_id;
+    if (bookId) {
+      this.bookService.trackInteraction(bookId, 'wishlist').subscribe({
+        next: () => {
+          console.log('Added to wishlist:', book.bookName);
+        },
+        error: (error) => {
+          console.error('Error adding to wishlist:', error);
+        }
+      });
+    }
   }
 
   generateNewRecommendations() {
@@ -295,6 +306,6 @@ export class AiPicksComponent implements OnInit {
   }
 
   trackByBookId(index: number, book: EnhancedBook): string {
-    return book.id;
+    return book._id || book.book_id || index.toString();
   }
 } 

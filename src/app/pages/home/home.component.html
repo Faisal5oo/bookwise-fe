@@ -81,7 +81,7 @@
           </div>
           <ng-template #defaultCover>
             <div class="text-white text-center p-4">
-              <div class="text-sm font-light mb-2">{{ book.author }}</div>
+              <div class="text-sm font-light mb-2">{{ book.authorName || book.author }}</div>
               <div class="text-lg font-bold">{{ book.bookName }}</div>
               <div class="w-12 h-12 mx-auto mt-4 border-2 border-white rounded-full flex items-center justify-center">
                 <div class="w-6 h-6 bg-white rounded-full"></div>
@@ -91,9 +91,9 @@
         </div>
         <div class="p-4">
           <h3 class="font-semibold text-gray-900 mb-1">{{ book.bookName }}</h3>
-          <p class="text-gray-600 text-sm mb-2">{{ book.author }}</p>
-          <span [class]="'inline-block px-2 py-1 text-xs rounded-full ' + getConditionClass(book.condition)">
-            {{ book.condition }}
+          <p class="text-gray-600 text-sm mb-2">{{ book.authorName || book.author }}</p>
+          <span [class]="'inline-block px-2 py-1 text-xs rounded-full ' + getConditionClass(book.bookCondition || book.condition || '')">
+            {{ book.bookCondition || book.condition }}
           </span>
         </div>
       </div>
