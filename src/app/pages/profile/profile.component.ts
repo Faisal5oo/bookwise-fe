@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -6,6 +6,8 @@ import { BookService } from '../../shared/services/book.service';
 import { StatsService } from '../../shared/services/stats.service';
 import { AuthService } from '../../shared/services/auth.service';
 import { ExchangeService } from '../../shared/services/exchange.service';
+import { PreferencesService } from '../../shared/services/preferences.service';
+import { AIService, BookMatch } from '../../shared/services/ai.service';
 import { Book } from '../../shared/models/book.model';
 import { ReadingStats } from '../../shared/models/stats.model';
 import { ExchangeDetails, ExchangeStatus } from '../../shared/models/exchange.model';
@@ -31,67 +33,45 @@ export class ProfileComponent implements OnInit {
   
   // Profile data
   user = {
-    user_id: '', // Will be set from auth service
-    name: 'User',
-    memberSince: '2023-01-15',
-    booksListed: 0,
+    user_id: '',
+    name: 'Loading...',
+    email: '',
     exchanges: 0,
+    booksListed: 0,
+    created_at: new Date().toISOString(),
     avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
   };
 
   // Reading stats
   readingStats: ReadingStats | null = null;
-  defaultReadingStats = {
-    booksRead: 12,
-    pagesRead: 3240,
-    authorsExplored: 8,
-    topGenres: [
-      { name: 'Fantasy', percentage: 40 },
-      { name: 'Classic', percentage: 30 },
-      { name: 'Science Fiction', percentage: 20 },
-      { name: 'Romance', percentage: 10 }
-    ]
-  };
 
   // User's books collection
   books: Book[] = [];
-  defaultBooks: Book[] = [
-    {
-      _id: '1',
-      book_id: '1',
-      user_id: this.user.user_id,
-      bookName: 'The Great Gatsby',
-      authorName: 'F. Scott Fitzgerald',
-      bookCondition: 'Very Good',
-      description: 'A classic American novel',
-      bookImages: ['https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop'],
-      genre: 'Classic',
-      is_taken: false,
-      created_at: new Date().toISOString(),
-      view_count: 120
-    },
-    {
-      _id: '2',
-      book_id: '2',
-      user_id: this.user.user_id,
-      bookName: 'The Hobbit',
-      authorName: 'J.R.R. Tolkien',
-      bookCondition: 'Good',
-      description: 'An unexpected journey',
-      bookImages: ['https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?w=200&h=300&fit=crop'],
-      genre: 'Fantasy',
-      is_taken: false,
-      created_at: new Date().toISOString(),
-      view_count: 95
-    }
-  ];
 
-  // AI Preferences
+  // AI Preferences - Dynamic data
   favoriteGenres = ['Fantasy', 'Science Fiction', 'Mystery', 'Thriller', 'Classic', 'Romance', 'Biography', 'History', 'Philosophy', 'Adventure'];
-  selectedGenres = ['Fantasy', 'Science Fiction', 'Classic'];
+  selectedGenres: string[] = [];
   
-  favoriteAuthors = ['J.R.R. Tolkien', 'F. Scott Fitzgerald', 'Jane Austen', 'George Orwell', 'Frank Herbert'];
-  selectedAuthors = ['J.R.R. Tolkien', 'F. Scott Fitzgerald'];
+  favoriteAuthors: string[] = [];
+  selectedAuthors: string[] = [];
+
+  // Dynamic data from API
+  availableGenres: string[] = [];
+  availableAuthors: string[] = [];
+
+  // AI Book Matches
+  bookMatches: BookMatch[] = [];
+  matchesLoading = false;
+
+  // Enhanced AI Matching Algorithm Info
+  matchingAlgorithmInfo = {
+    directGenreMatching: 50,
+    authorMatching: 40,
+    descriptionAnalysis: 30,
+    keywordMatching: 20,
+    qualityBonus: 10,
+    baseRecommendations: 20
+  };
 
   readingPreferences = {
     bookLength: 'Medium',
@@ -104,6 +84,8 @@ export class ProfileComponent implements OnInit {
     private statsService: StatsService,
     private authService: AuthService,
     private exchangeService: ExchangeService,
+    private preferencesService: PreferencesService,
+    private aiService: AIService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -112,6 +94,7 @@ export class ProfileComponent implements OnInit {
     if (currentUser) {
       this.user.user_id = currentUser.user_id;
       this.user.name = `${currentUser.fname} ${currentUser.lname}`;
+      this.user.created_at = (currentUser as any).created_at || new Date().toISOString();
     }
   }
 
@@ -123,6 +106,56 @@ export class ProfileComponent implements OnInit {
         this.loadProfileData();
       } else {
         this.loadProfileData();
+      }
+    });
+    
+    // Load user preferences
+    this.loadUserPreferences();
+    
+    // Load dynamic data
+    this.loadDynamicData();
+  }
+
+  loadUserPreferences() {
+    if (!this.user.user_id) return;
+
+    this.preferencesService.getUserPreferences(this.user.user_id).subscribe({
+      next: (preferences) => {
+        console.log('✅ User preferences loaded:', preferences);
+        if (preferences) {
+          this.selectedGenres = preferences.favorite_genres || this.selectedGenres;
+          this.selectedAuthors = preferences.favorite_authors || this.selectedAuthors;
+          this.readingPreferences = { ...this.readingPreferences, ...preferences.reading_preferences };
+        }
+      },
+      error: (error) => {
+        console.log('No existing preferences found, using defaults');
+      }
+    });
+  }
+
+  loadDynamicData() {
+    // Load all available genres from API
+    this.bookService.getAllGenres().subscribe({
+      next: (genres) => {
+        this.availableGenres = genres;
+        console.log('✅ Available genres loaded:', genres);
+      },
+      error: (error) => {
+        console.log('📚 Using default genres, API not available:', error);
+        this.availableGenres = [];
+      }
+    });
+
+    // Load all available authors from API
+    this.bookService.getAllAuthors().subscribe({
+      next: (authors) => {
+        this.availableAuthors = authors;
+        console.log('✅ Available authors loaded:', authors);
+      },
+      error: (error) => {
+        console.log('👥 Using authors from user books, API not available:', error);
+        this.availableAuthors = [];
       }
     });
   }
@@ -174,73 +207,88 @@ export class ProfileComponent implements OnInit {
           this.books = response.books || [];
           this.user.booksListed = response.total_user_books || 0;
           
-          // Update user name if provided by API
+          // Extract authors from books for AI preferences
+          this.extractAuthorsFromBooks();
+          
+          // Update user info if provided by API
           if (response.user_name) {
             this.user.name = response.user_name;
           }
           
-          console.log(`📚 User "${this.user.name}" has ${this.user.booksListed} books`);
-          console.log('📖 Books loaded:', this.books.length, 'books');
+          // Handle user creation date
+          if (response.user_created_at) {
+            this.user.created_at = response.user_created_at;
+          } else if (response.created_at) {
+            this.user.created_at = response.created_at;
+          }
           
-          // Log individual books for debugging
-          this.books.forEach((book, index) => {
-            console.log(`Book ${index + 1}:`, {
-              _id: book._id,
-              book_id: book.book_id,
-              combined_id: book._id || book.book_id,
-              name: book.bookName,
-              author: book.authorName,
-              condition: book.bookCondition,
-              full_book: book
-            });
+          console.log('📚 Books loaded successfully:', {
+            count: this.books.length,
+            total_from_api: response.total_user_books,
+            books_listed: this.user.booksListed,
+            member_since: this.user.created_at
           });
-        } else {
-          console.warn('⚠️ Empty response from API');
-          this.books = [];
-          this.user.booksListed = 0;
         }
         
         this.loading = false;
       },
       error: (error) => {
-        console.error('❌ Error calling /users/' + this.user.user_id + '/books:', error);
-        console.error('Error details:', {
-          status: error.status,
-          statusText: error.statusText,
-          message: error.message,
-          error: error.error
-        });
+        console.error('❌ Error loading user books:', error);
         
-        // Handle different error scenarios
-        if (error.status === 404) {
-          console.log('👤 User not found or user has no books');
-          this.books = [];
-          this.user.booksListed = 0;
-        } else if (error.status === 0) {
-          console.error('🔌 Backend server is not running or CORS issue');
-          alert('Cannot connect to backend server. Please make sure your FastAPI server is running on http://localhost:8000');
-          this.books = [];
-          this.user.booksListed = 0;
-        } else {
-          console.log('📭 Setting empty books list due to error');
-          this.books = [];
-          this.user.booksListed = 0;
+        // Show detailed error information
+        let errorMsg = 'Unknown error occurred';
+        if (error.error?.detail) {
+          errorMsg = Array.isArray(error.error.detail) ? 
+            error.error.detail.map((d: any) => d.msg || d).join(', ') : 
+            error.error.detail;
+        } else if (error.message) {
+          errorMsg = error.message;
         }
         
+        console.error('📋 Detailed error:', {
+          status: error.status,
+          statusText: error.statusText,
+          error: error.error,
+          message: errorMsg
+        });
+        
+        // Don't set default books - keep empty array
+        this.books = [];
+        this.user.booksListed = 0;
         this.loading = false;
       }
     });
 
-    // Load reading statistics
+    // Load reading stats
     this.statsService.getReadingStats(this.user.user_id).subscribe({
       next: (stats) => {
         this.readingStats = stats;
+        console.log('📊 Reading stats loaded:', stats);
       },
       error: (error) => {
-        console.error('Error loading reading stats:', error);
-        // Use default stats for demo
+        console.log('📊 No reading stats available:', error);
+        this.readingStats = null;
       }
     });
+
+    // Load exchanges
+    this.loadExchanges();
+    
+    // Load AI book matches
+    this.loadBookMatches();
+  }
+
+  private extractAuthorsFromBooks() {
+    const authorSet = new Set<string>();
+    
+    this.books.forEach(book => {
+      if (book.authorName && book.authorName.trim()) {
+        authorSet.add(book.authorName.trim());
+      }
+    });
+    
+    this.favoriteAuthors = Array.from(authorSet).sort();
+    console.log('👥 Extracted authors from books:', this.favoriteAuthors);
   }
 
   setActiveTab(tab: string) {
@@ -275,42 +323,47 @@ export class ProfileComponent implements OnInit {
   }
 
   updatePreferences() {
+    if (!this.user.user_id) {
+      alert('Please log in to save preferences');
+      return;
+    }
+
     // Call API to save preferences
     const preferences = {
+      user_id: this.user.user_id,
       favorite_genres: this.selectedGenres,
       favorite_authors: this.selectedAuthors,
-      reading_preferences: this.readingPreferences
+      reading_preferences: {
+        bookLength: this.readingPreferences.bookLength || 'Medium',
+        writingStyle: this.readingPreferences.writingStyle || 'Moderate',
+        publicationEra: this.readingPreferences.publicationEra || 'Modern'
+      }
     };
 
-    // This would call the preferences API once implemented
-    console.log('Preferences updated:', preferences);
+    console.log('Saving preferences:', preferences);
     
-    // Show success message
-    alert('Preferences updated successfully!');
-  }
-
-  // Method to get display stats
-  getDisplayStats() {
-    if (this.readingStats) {
-      return {
-        booksRead: this.readingStats.books_read,
-        pagesRead: this.readingStats.pages_read,
-        authorsExplored: this.readingStats.authors_explored,
-        topGenres: this.getGenrePercentages()
-      };
-    }
-    return this.defaultReadingStats;
-  }
-
-  private getGenrePercentages() {
-    if (!this.readingStats?.top_genres) return this.defaultReadingStats.topGenres;
-    
-    // Convert genres array to percentage format
-    const total = this.readingStats.top_genres.length;
-    return this.readingStats.top_genres.map((genre, index) => ({
-      name: genre,
-      percentage: Math.max(10, (total - index) * 20) // Mock percentage calculation
-    }));
+    this.preferencesService.setUserPreferences(this.user.user_id, preferences).subscribe({
+      next: (response) => {
+        console.log('✅ Preferences saved successfully:', response);
+        
+        // Set flag for AI recommendations to refresh
+        localStorage.setItem('preferencesUpdated', new Date().toISOString());
+        
+        alert('Preferences updated successfully! The AI will now use these to generate better recommendations for you.');
+      },
+      error: (error) => {
+        console.error('❌ Error saving preferences:', error);
+        let errorMsg = 'Failed to save preferences.';
+        
+        if (error.error?.detail) {
+          errorMsg += ' ' + (Array.isArray(error.error.detail) ? 
+            error.error.detail.map((d: any) => d.msg || d).join(', ') : 
+            error.error.detail);
+        }
+        
+        alert(errorMsg + ' Please try again.');
+      }
+    });
   }
 
   getConditionClass(condition: string): string {
@@ -582,5 +635,62 @@ export class ProfileComponent implements OnInit {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  }
+
+  loadBookMatches() {
+    if (!this.user.user_id) return;
+
+    this.matchesLoading = true;
+    console.log('🎯 Loading AI book matches for user:', this.user.user_id);
+    
+    this.aiService.getBookMatches(this.user.user_id).subscribe({
+      next: (response: any) => {
+        console.log('✅ Book matches response:', response);
+        
+        if (response && response.matches) {
+          this.bookMatches = response.matches;
+          console.log(`🎯 Found ${this.bookMatches.length} book matches`);
+        } else if (Array.isArray(response)) {
+          this.bookMatches = response;
+          console.log(`🎯 Found ${this.bookMatches.length} book matches`);
+        } else {
+          this.bookMatches = [];
+          console.log('📚 No book matches found');
+        }
+        
+        this.matchesLoading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error loading book matches:', error);
+        this.bookMatches = [];
+        this.matchesLoading = false;
+      }
+    });
+  }
+
+  // AI Book Matches helper methods
+  trackByMatchId(index: number, match: BookMatch): string {
+    return match.book_id || index.toString();
+  }
+
+  getMatchPercentageClass(percentage: number): string {
+    if (percentage >= 80) return 'bg-green-500';
+    if (percentage >= 60) return 'bg-blue-500';
+    if (percentage >= 40) return 'bg-yellow-500';
+    return 'bg-orange-500';
+  }
+
+  viewBookDetails(match: BookMatch | any) {
+    const bookId = match.book_id || match._id;
+    if (bookId) {
+      this.router.navigate(['/book', bookId]);
+    }
+  }
+
+  requestExchange(match: BookMatch) {
+    // Navigate to exchange request page or open modal
+    console.log('Requesting exchange for book:', match.book_name);
+    // Implementation depends on your exchange system
+    alert(`Exchange request for "${match.book_name}" - Feature coming soon!`);
   }
 } 

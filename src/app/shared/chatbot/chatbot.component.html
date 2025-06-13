@@ -140,6 +140,53 @@
               </div>
             </div>
 
+            <!-- Book Matches -->
+            <div *ngIf="message.bookMatches && message.bookMatches.length > 0" class="mt-3 space-y-2">
+              <div class="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-xl p-3 shadow-sm">
+                <h4 class="text-sm font-bold text-orange-800 mb-2 flex items-center">
+                  🎯 Top Book Matches
+                </h4>
+                <div class="space-y-2">
+                  <div *ngFor="let match of message.bookMatches" class="bg-white rounded-lg p-3 border border-orange-100">
+                    <div class="flex items-start space-x-3">
+                      <!-- Book Cover -->
+                      <div class="w-10 h-14 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
+                        <img *ngIf="match.image_url; else matchPlaceholder" 
+                             [src]="match.image_url" 
+                             [alt]="match.book_name"
+                             class="w-full h-full object-cover">
+                        <ng-template #matchPlaceholder>
+                          <div class="w-full h-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
+                            </svg>
+                          </div>
+                        </ng-template>
+                      </div>
+
+                      <!-- Book Info -->
+                      <div class="flex-1 min-w-0">
+                        <h5 class="text-sm font-bold text-gray-900 line-clamp-1">{{match.book_name}}</h5>
+                        <p class="text-xs text-gray-600 mb-1">by {{match.author}}</p>
+                        
+                        <!-- Match Percentage -->
+                        <div class="flex items-center mb-1">
+                          <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                            {{match.match_percentage}}% Match
+                          </div>
+                        </div>
+
+                        <!-- Reason -->
+                        <p class="text-xs text-orange-700 leading-tight line-clamp-2">
+                          {{match.reason}}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <p class="text-xs text-gray-500 mt-1 ml-11">{{message.timestamp | date:'short'}}</p>
           </div>
         </div>

@@ -105,41 +105,56 @@
 <section class="py-16 bg-gray-50">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center mb-2">
-      <h2 class="text-3xl font-bold text-gray-900">AI Recommendations For You</h2>
+      <h2 class="text-3xl font-bold text-gray-900">Recent Books</h2>
       <button 
         (click)="navigateToAIPicks()" 
-        class="text-bookwise-orange hover:underline font-medium">More Recommendations →</button>
+        class="text-bookwise-orange hover:underline font-medium">AI Recommendations →</button>
     </div>
-    <p class="text-gray-600 mb-8">Personalized suggestions based on your reading preferences</p>
+    <p class="text-gray-600 mb-8">Recently added books from our community</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <!-- Default recommendations when no data -->
-      <div *ngFor="let recommendation of aiRecommendations" class="bg-white rounded-lg shadow-md p-6">
+      <!-- Recent books -->
+      <div *ngFor="let book of recentBooks.slice(0, 4)" class="bg-white rounded-lg shadow-md p-6">
         <div class="flex gap-4">
           <div class="w-24 h-32 bg-gradient-to-br from-green-400 to-blue-500 rounded flex-shrink-0 flex items-center justify-center">
-            <div class="w-16 h-24 bg-white rounded shadow-md flex items-center justify-center">
-              <div class="text-gray-800 text-center text-xs">{{ recommendation.bookName }}</div>
+            <div *ngIf="book.bookImages && book.bookImages.length > 0; else defaultBookCover">
+              <img [src]="book.bookImages[0]" [alt]="book.bookName" class="w-full h-full object-cover rounded">
             </div>
+            <ng-template #defaultBookCover>
+              <div class="w-16 h-24 bg-white rounded shadow-md flex items-center justify-center">
+                <div class="text-gray-800 text-center text-xs">{{ book.bookName }}</div>
+              </div>
+            </ng-template>
           </div>
           <div class="flex-1">
             <div class="flex justify-between items-start mb-2">
-              <h3 class="text-lg font-semibold text-gray-900">{{ recommendation.bookName }}</h3>
-              <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                {{ recommendation.match_percentage }}% Match
+              <h3 class="text-lg font-semibold text-gray-900">{{ book.bookName }}</h3>
+              <span [class]="'px-2 py-1 rounded-full text-sm font-medium ' + getConditionClass(book.bookCondition || book.condition || '')">
+                {{ book.bookCondition || book.condition }}
               </span>
             </div>
-            <p class="text-gray-600 text-sm mb-3">{{ recommendation.author }}</p>
-            <p class="text-gray-700 text-sm mb-4 italic">
-              "{{ recommendation.reason }}"
+            <p class="text-gray-600 text-sm mb-3">by {{ book.authorName || book.author }}</p>
+            <p class="text-gray-700 text-sm mb-4" *ngIf="book.description">
+              {{ book.description.length > 100 ? (book.description | slice:0:100) + '...' : book.description }}
             </p>
-            <p class="text-xs text-gray-500 mb-4">- AI Recommendation</p>
             <button 
-              (click)="navigateToBookDetail(recommendation.id)"
-              class="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-              View Book
+              (click)="onBookClick(book)"
+              class="w-full bg-bookwise-orange text-white py-2 rounded-lg hover:bg-bookwise-brown transition-colors">
+              View Details
             </button>
           </div>
         </div>
+      </div>
+      
+      <!-- Empty state when no recent books -->
+      <div *ngIf="recentBooks.length === 0" class="col-span-2 text-center py-12">
+        <div class="text-gray-400 mb-4">
+          <svg class="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Recent Books</h3>
+        <p class="text-gray-600">Be the first to add a book to our community!</p>
       </div>
     </div>
   </div>

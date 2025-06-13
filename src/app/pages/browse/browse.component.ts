@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { BookService } from '../../shared/services/book.service';
 import { ExchangeService } from '../../shared/services/exchange.service';
 import { AuthService } from '../../shared/services/auth.service';
@@ -28,14 +28,15 @@ export class BrowseComponent implements OnInit {
   exchangeMessage = '';
   selectedBook: Book | null = null;
   
-  genres = ['Fiction', 'Non-Fiction', 'Mystery', 'Romance', 'Sci-Fi', 'Fantasy', 'Biography', 'History'];
-  conditions = ['Excellent', 'Very Good', 'Good', 'Fair'];
+  genres: string[] = [];
+  conditions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Acceptable'];
   
   selectedGenres: string[] = [];
   selectedConditions: string[] = [];
 
   constructor(
     private router: Router,
+    private activatedRoute: ActivatedRoute,
     private bookService: BookService,
     private exchangeService: ExchangeService,
     private authService: AuthService
@@ -43,37 +44,38 @@ export class BrowseComponent implements OnInit {
 
   ngOnInit() {
     this.loadBooks();
+    this.loadGenres();
+    
+    // Handle search query from navbar
+    this.activatedRoute.queryParams.subscribe(params => {
+      if (params['search']) {
+        this.searchQuery = params['search'];
+        this.performSearch();
+      }
+    });
   }
 
   loadBooks() {
     this.loading = true;
     this.errorMessage = '';
-    this.imageErrorBooks.clear(); // Reset image errors when reloading
+    this.imageErrorBooks.clear();
     
     console.log('📚 Loading all books from API...');
     
-    // Get all books from the API
     this.bookService.getBooks(0, 1000).subscribe({
       next: (response) => {
         console.log('✅ Books loaded successfully:', response);
         this.books = response.books || [];
         this.filteredBooks = [...this.books];
         
-        // Debug: Log first book structure
-        if (this.books.length > 0) {
-          console.log('📖 Sample Book Structure:', this.books[0]);
-          console.log('📝 Book Properties:', Object.keys(this.books[0]));
-          console.log('🆔 Book ID Fields:', {
-            '_id': this.books[0]._id,
-            'book_id': this.books[0].book_id,
-            'id': (this.books[0] as any).id
-          });
-        }
+        // Extract unique genres from books
+        this.extractGenresFromBooks();
         
         this.applyFilters();
         this.loading = false;
         
         console.log(`📖 Total books loaded: ${this.books.length}`);
+        console.log(`🏷️ Available genres: ${this.genres.join(', ')}`);
       },
       error: (error) => {
         console.error('❌ Error loading books:', error);
@@ -81,8 +83,21 @@ export class BrowseComponent implements OnInit {
         this.loading = false;
         this.books = [];
         this.filteredBooks = [];
+        this.genres = [];
       }
     });
+  }
+
+  private extractGenresFromBooks() {
+    const genreSet = new Set<string>();
+    
+    this.books.forEach(book => {
+      if (book.genre && book.genre.trim()) {
+        genreSet.add(book.genre.trim());
+      }
+    });
+    
+    this.genres = Array.from(genreSet).sort();
   }
 
   private getErrorMessage(error: any): string {
@@ -175,8 +190,6 @@ export class BrowseComponent implements OnInit {
         return 'bg-gray-100 text-gray-800';
     }
   }
-
-
 
   trackByBookId(index: number, book: Book): string {
     return book._id || book.book_id || index.toString();
@@ -334,5 +347,15 @@ export class BrowseComponent implements OnInit {
     } else {
       console.error('No book ID found for book:', book);
     }
+  }
+
+  loadGenres() {
+    // Genres are already extracted from books in loadBooks method
+    // This method is kept for compatibility
+  }
+
+  performSearch() {
+    // Apply the search filter when search query is set from navbar
+    this.applyFilters();
   }
 } 

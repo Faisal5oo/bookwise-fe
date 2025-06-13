@@ -11,6 +11,35 @@ export interface AIRecommendation {
   created_at: string;
 }
 
+export interface BookMatch {
+  book_id: string;
+  book_name: string;
+  author: string;
+  description: string;
+  match_percentage: number;
+  reason: string;
+  genre?: string;
+  condition?: string;
+  image_url?: string;
+}
+
+export interface ChatMessage {
+  type: "user" | "ai";
+  message: string;
+  timestamp: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  conversation_history?: ChatMessage[];
+}
+
+export interface ChatResponse {
+  response: string;
+  recommendations?: AIRecommendation[];
+  timestamp: string;
+}
+
 export interface GenerateRecommendationsResponse {
   message: string;
   recommendations_count: number;
@@ -29,6 +58,16 @@ export class AIService {
   private apiUrl = `${environment.apiUrl}`;
 
   constructor(private http: HttpClient) {}
+
+  // New chat endpoint for AI recommendations
+  sendChatMessage(userId: string, chatRequest: ChatRequest): Observable<ChatResponse> {
+    return this.http.post<ChatResponse>(`${this.apiUrl}/ai/chat/${userId}`, chatRequest);
+  }
+
+  // New book matches endpoint
+  getBookMatches(userId: string): Observable<BookMatch[]> {
+    return this.http.get<BookMatch[]>(`${this.apiUrl}/ai/book-matches/${userId}`);
+  }
 
   // Generate new AI recommendations for a user
   generateRecommendations(userId: string): Observable<GenerateRecommendationsResponse> {

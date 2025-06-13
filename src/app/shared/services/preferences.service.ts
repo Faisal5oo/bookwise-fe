@@ -23,27 +23,31 @@ export interface AIRecommendation {
   providedIn: 'root'
 })
 export class PreferencesService {
-  private apiUrl = `${environment.apiUrl}/users`;
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
   // Get user preferences
   getUserPreferences(userId: string): Observable<UserPreferences> {
-    return this.http.get<UserPreferences>(`${this.apiUrl}/${userId}/preferences`);
+    return this.http.get<UserPreferences>(`${this.apiUrl}/users/${userId}/preferences`);
   }
 
   // Set user preferences
   setUserPreferences(userId: string, preferences: Partial<UserPreferences>): Observable<UserPreferences> {
-    return this.http.post<UserPreferences>(`${this.apiUrl}/${userId}/preferences`, preferences);
+    const requestBody = {
+      user_id: userId,
+      ...preferences
+    };
+    return this.http.post<UserPreferences>(`${this.apiUrl}/users/${userId}/preferences`, requestBody);
   }
 
   // Get AI recommendations
   getAIRecommendations(userId: string, skip = 0, limit = 10): Observable<AIRecommendation[]> {
-    return this.http.get<AIRecommendation[]>(`${this.apiUrl}/${userId}/ai-recommendations?skip=${skip}&limit=${limit}`);
+    return this.http.get<AIRecommendation[]>(`${this.apiUrl}/users/${userId}/ai-recommendations?skip=${skip}&limit=${limit}`);
   }
 
   // Generate new AI recommendations
   generateRecommendations(userId: string): Observable<AIRecommendation[]> {
-    return this.http.post<AIRecommendation[]>(`${environment.apiUrl}/ai/generate-recommendations/${userId}`, {});
+    return this.http.post<AIRecommendation[]>(`${this.apiUrl}/ai/generate-recommendations/${userId}`, {});
   }
 } 

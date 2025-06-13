@@ -1,16 +1,8 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <!-- Page Title -->
-  <div class="mb-8 flex justify-between items-center">
+  <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">Browse Books</h1>
-    <button 
-      (click)="loadBooks()"
-      [disabled]="loading"
-      class="bg-bookwise-orange text-white px-4 py-2 rounded-lg font-medium hover:bg-bookwise-brown transition-colors disabled:opacity-50">
-      <svg class="w-5 h-5 inline mr-2" [class.animate-spin]="loading" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-      </svg>
-      {{loading ? 'Loading...' : 'Refresh'}}
-    </button>
+    <p class="text-gray-600 mt-2">Discover and exchange books with other readers</p>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -229,7 +221,8 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <div 
             *ngFor="let book of filteredBooks; trackBy: trackByBookId" 
-            class="book-card bg-white">
+            (click)="viewBookDetails(book)"
+            class="book-card bg-white cursor-pointer hover:shadow-lg transition-shadow duration-200">
             
             <!-- Book Cover -->
             <div class="book-image-container">

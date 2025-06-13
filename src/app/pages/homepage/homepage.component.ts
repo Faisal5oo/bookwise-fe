@@ -5,13 +5,13 @@ import { BookService } from '../../shared/services/book.service';
 import { Book } from '../../shared/models/book.model';
 
 @Component({
-  selector: 'app-home',
+  selector: 'app-homepage',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  templateUrl: '../home/home.component.html',
+  styleUrls: ['../home/home.component.scss']
 })
-export class HomeComponent implements OnInit {
+export class HomepageComponent implements OnInit {
   allBooks: Book[] = [];
   featuredBooks: Book[] = [];
   recentBooks: Book[] = [];
@@ -91,4 +91,4 @@ export class HomeComponent implements OnInit {
         return 'bg-gray-100 text-gray-800';
     }
   }
-}
+} 

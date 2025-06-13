@@ -68,4 +68,6 @@ export interface BookApiResponse {
   user_id?: string;
   user_name?: string;
   total_user_books?: number;
+  user_created_at?: string;
+  created_at?: string;
 } 

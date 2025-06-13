@@ -73,76 +73,46 @@ export class BookDetailComponent implements OnInit {
   }
 
   requestExchange() {
-    if (!this.isAuthenticated) {
-      this.router.navigate(['/auth']);
-      return;
-    }
-
-    if (!this.book) return;
-
+    if (!this.book || !this.isAuthenticated) return;
+    
     this.exchangeLoading = true;
-    
-    const exchangeRequest: ExchangeRequest = {
-      requester_id: this.currentUserId,
-      book_id: this.book._id || this.book.book_id || '',
-      owner_id: this.book.user_id || this.book.owner_id || '',
-      message: `I would like to exchange this book: ${this.book.bookName}`
-    };
-
-    this.exchangeService.requestExchange(exchangeRequest).subscribe({
-      next: (response) => {
-        console.log('Exchange requested successfully:', response);
-        alert('Exchange request sent successfully!');
-        this.exchangeLoading = false;
-      },
-      error: (error) => {
-        console.error('Error requesting exchange:', error);
-        alert('Error sending exchange request. Please try again.');
-        this.exchangeLoading = false;
-      }
-    });
-  }
-
-  addToWishlist() {
-    if (!this.isAuthenticated) {
-      this.router.navigate(['/auth']);
-      return;
-    }
-
-    if (!this.book) return;
-
     const bookId = this.book._id || this.book.book_id;
-    if (!bookId) return;
     
-    this.bookService.trackInteraction(bookId, 'wishlist').subscribe({
-      next: () => {
-        alert('Added to wishlist!');
-      },
-      error: (error) => {
-        console.error('Error adding to wishlist:', error);
-        alert('Error adding to wishlist. Please try again.');
-      }
-    });
+    if (bookId) {
+      const exchangeRequest: ExchangeRequest = {
+        book_id: bookId,
+        requester_id: this.currentUserId,
+        owner_id: this.book.user_id || this.book.owner_id || '',
+        message: `I would like to exchange books with you. I'm interested in "${this.book.bookName}".`
+      };
+
+      this.exchangeService.requestExchange(exchangeRequest).subscribe({
+        next: (response: any) => {
+          console.log('Exchange request sent:', response);
+          this.exchangeLoading = false;
+          // You might want to show a success message here
+        },
+        error: (error: any) => {
+          console.error('Error sending exchange request:', error);
+          this.exchangeLoading = false;
+          // You might want to show an error message here
+        }
+      });
+    }
   }
 
   goBack() {
-    window.history.back();
+    this.router.navigate(['/browse']);
   }
 
   getConditionColor(condition: string): string {
-    switch (condition.toLowerCase()) {
-      case 'excellent':
-        return 'bg-green-100 text-green-800';
-      case 'very good':
-        return 'bg-blue-100 text-blue-800';
-      case 'good':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'fair':
-        return 'bg-orange-100 text-orange-800';
-      case 'poor':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    switch (condition?.toLowerCase()) {
+      case 'excellent': return 'bg-green-100 text-green-800';
+      case 'very good': return 'bg-blue-100 text-blue-800';
+      case 'good': return 'bg-yellow-100 text-yellow-800';
+      case 'fair': return 'bg-orange-100 text-orange-800';
+      case 'acceptable': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   }
 

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { BookService } from '../../shared/services/book.service';
-import { AIService, AIRecommendation } from '../../shared/services/ai.service';
+import { AIService, AIRecommendation, BookMatch } from '../../shared/services/ai.service';
 import { AuthService } from '../../shared/services/auth.service';
 import { Book } from '../../shared/models/book.model';
 
@@ -27,7 +27,9 @@ export class AiPicksComponent implements OnInit {
   currentUserId = '';
   
   featuredBooks: EnhancedBook[] = [];
-  trendingBooks: EnhancedBook[] = [];
+
+  bookMatches: BookMatch[] = [];
+  totalMatches = 0;
   recommendations: AIRecommendation[] = [];
   aiInsights = '';
   
@@ -46,12 +48,142 @@ export class AiPicksComponent implements OnInit {
     }
     
     this.currentUserId = userId;
+    this.loadBookMatches();
+    this.loadAIRecommendations();
+    this.loadAIInsights();
+    
+    // Listen for preference changes (you can implement this based on your preference service)
+    this.setupPreferenceChangeListener();
+  }
+
+  private setupPreferenceChangeListener() {
+    // Check for preference changes every 30 seconds
+    // In a real app, you might use WebSockets or a more sophisticated approach
+    setInterval(() => {
+      this.checkForPreferenceChanges();
+    }, 30000);
+  }
+
+  private checkForPreferenceChanges() {
+    // This is a simple implementation - you might want to store last update timestamp
+    // and only refresh if preferences were updated recently
+    const lastRefresh = localStorage.getItem('lastAIRefresh');
+    const preferencesUpdated = localStorage.getItem('preferencesUpdated');
+    
+    if (preferencesUpdated && (!lastRefresh || preferencesUpdated > lastRefresh)) {
+      console.log('🔄 Preferences changed, refreshing AI recommendations...');
+      this.refreshAllRecommendations();
+      localStorage.setItem('lastAIRefresh', new Date().toISOString());
+      localStorage.removeItem('preferencesUpdated');
+    }
+  }
+
+  refreshAllRecommendations() {
+    console.log('🔄 Refreshing all AI recommendations...');
+    this.loadBookMatches();
     this.loadAIRecommendations();
     this.loadAIInsights();
   }
 
-  async loadAIRecommendations() {
+  async loadBookMatches() {
     this.loading = true;
+    console.log('🎯 Loading AI book matches for user:', this.currentUserId);
+    
+    this.aiService.getBookMatches(this.currentUserId).subscribe({
+      next: (response: any) => {
+        console.log('✅ Book matches response:', response);
+        
+        // Handle the new API response format
+        if (response && response.matches) {
+          this.bookMatches = response.matches;
+          this.totalMatches = response.total_matches || response.matches.length;
+          this.convertMatchesToFeaturedBooks(response.matches);
+          console.log(`🎯 Found ${response.total_matches} book matches`);
+        } else if (Array.isArray(response)) {
+          // Fallback for direct array response
+          this.bookMatches = response;
+          this.totalMatches = response.length;
+          this.convertMatchesToFeaturedBooks(response);
+        } else {
+          this.bookMatches = [];
+          this.totalMatches = 0;
+          this.featuredBooks = [];
+        }
+        
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error loading book matches:', error);
+        this.bookMatches = [];
+        this.featuredBooks = [];
+        this.loading = false;
+      }
+    });
+  }
+
+  convertMatchesToFeaturedBooks(matches: any[]) {
+    this.featuredBooks = matches.slice(0, 6).map(match => ({
+      _id: match.book_id,
+      book_id: match.book_id,
+      user_id: '', // Will be populated when we fetch full book details
+      bookName: match.book_name,
+      authorName: match.author_name || match.author,
+      bookCondition: match.book_condition || match.condition || 'Good',
+      bookImages: match.image_url ? [match.image_url] : [],
+      description: match.description || '',
+      is_taken: false,
+      created_at: new Date().toISOString(),
+      view_count: 0,
+      genre: match.genre || '',
+      rating: Math.random() * 1 + 4,
+      aiMatch: match.match_percentage,
+      aiReason: this.formatAIReason(match.match_reasons || [match.reason] || []),
+      pages: Math.floor(Math.random() * 400) + 200,
+      aiAnalysis: this.formatAIReason(match.match_reasons || [match.reason] || [])
+    }));
+  }
+
+  private formatAIReason(reasons: string[]): string {
+    if (!reasons || reasons.length === 0) {
+      return 'This book matches your reading preferences based on our AI analysis.';
+    }
+
+    // Convert technical AI reasons to user-friendly messages
+    const formattedReasons = reasons.map(reason => {
+      if (reason.includes("Genre") && reason.includes("found in description")) {
+        const genreMatch = reason.match(/'([^']+)'/);
+        const genre = genreMatch ? genreMatch[1] : 'your preferred genre';
+        return `📚 Matches your love for ${genre} books`;
+      }
+      
+      if (reason.includes("Found") && reason.includes("related to")) {
+        const parts = reason.split("related to");
+        if (parts.length > 1) {
+          const genre = parts[1].trim();
+          return `✨ Contains ${genre.toLowerCase()} elements you enjoy`;
+        }
+      }
+      
+      if (reason.includes("Author")) {
+        return `👤 From an author you might enjoy`;
+      }
+      
+      if (reason.includes("keyword")) {
+        return `🔍 Contains themes you're interested in`;
+      }
+      
+      if (reason.includes("condition")) {
+        return `⭐ High-quality book in excellent condition`;
+      }
+      
+      // Fallback for any unmatched reasons
+      return `🎯 ${reason}`;
+    });
+
+    return formattedReasons.join(' • ');
+  }
+
+  async loadAIRecommendations() {
     try {
       this.aiService.getAIRecommendations(this.currentUserId, 0, 6).subscribe({
         next: (recommendations) => {
@@ -60,24 +192,14 @@ export class AiPicksComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error loading AI recommendations:', error);
-          this.setMockRecommendations();
+          this.recommendations = [];
         }
       });
 
-      this.bookService.getTrendingBooks(6).subscribe({
-        next: (books) => {
-          this.trendingBooks = this.enhanceBooksWithAI(books);
-        },
-        error: (error) => {
-          console.error('Error loading trending books:', error);
-          this.setMockTrendingBooks();
-        }
-      });
+
 
     } catch (error) {
       console.error('Error loading AI picks data:', error);
-    } finally {
-      this.loading = false;
     }
   }
 
@@ -104,7 +226,7 @@ export class AiPicksComponent implements OnInit {
       });
     }).catch(error => {
       console.error('Error loading recommended books:', error);
-      this.setMockFeaturedBooks();
+      this.featuredBooks = [];
     });
   }
 
@@ -130,131 +252,6 @@ export class AiPicksComponent implements OnInit {
     }));
   }
 
-  setMockRecommendations() {
-    this.recommendations = [
-      {
-        user_id: this.currentUserId,
-        book_id: 'book1',
-        match_percentage: 97,
-        reason: 'Perfect match based on your love for character-driven stories',
-        created_at: new Date().toISOString()
-      },
-      {
-        user_id: this.currentUserId,
-        book_id: 'book2',
-        match_percentage: 94,
-        reason: 'Matches your preference for science fiction with heart',
-        created_at: new Date().toISOString()
-      }
-    ];
-    this.setMockFeaturedBooks();
-  }
-
-  setMockFeaturedBooks() {
-    this.featuredBooks = [
-      {
-        _id: '507f1f77bcf86cd799439011',
-        book_id: '507f1f77bcf86cd799439011',
-        user_id: '507f1f77bcf86cd799439001',
-        bookName: "The Seven Husbands of Evelyn Hugo",
-        authorName: "Taylor Jenkins Reid",
-        bookCondition: 'Very Good',
-        bookImages: ["https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=450&fit=crop"],
-        description: "A captivating novel about a reclusive Hollywood icon",
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 150,
-        genre: "Historical Fiction",
-        rating: 4.8,
-        aiMatch: 97,
-        aiReason: "Perfect match based on your love for character-driven stories",
-        pages: 400,
-        aiAnalysis: "Our AI detected you enjoy complex character development and Hollywood glamour stories."
-      },
-      {
-        _id: '507f1f77bcf86cd799439012',
-        book_id: '507f1f77bcf86cd799439012',
-        user_id: '507f1f77bcf86cd799439002',
-        bookName: "Project Hail Mary",
-        authorName: "Andy Weir",
-        bookCondition: 'Good',
-        bookImages: ["https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300&h=450&fit=crop"],
-        description: "A lone astronaut must save humanity",
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 200,
-        genre: "Science Fiction",
-        rating: 4.9,
-        aiMatch: 94,
-        aiReason: "Matches your preference for science fiction with heart",
-        pages: 496,
-        aiAnalysis: "Your reading history shows strong interest in problem-solving narratives and space exploration."
-      },
-      {
-        _id: '507f1f77bcf86cd799439013',
-        book_id: '507f1f77bcf86cd799439013',
-        user_id: '507f1f77bcf86cd799439003',
-        bookName: "The Midnight Library",
-        authorName: "Matt Haig",
-        bookCondition: 'Very Good',
-        bookImages: ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop"],
-        description: "Between life and death lies the Midnight Library",
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 175,
-        genre: "Fantasy/Philosophy",
-        rating: 4.6,
-        aiMatch: 91,
-        aiReason: "Aligns with your interest in philosophical and uplifting themes",
-        pages: 288,
-        aiAnalysis: "AI analysis shows you gravitate toward books exploring life's possibilities and personal growth."
-      }
-    ];
-  }
-
-  setMockTrendingBooks() {
-    this.trendingBooks = [
-      {
-        _id: '507f1f77bcf86cd799439014',
-        book_id: '507f1f77bcf86cd799439014',
-        user_id: '507f1f77bcf86cd799439004',
-        bookName: "Circe",
-        authorName: "Madeline Miller",
-        bookCondition: 'Good',
-        bookImages: ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300&h=450&fit=crop"],
-        description: "The witch Circe's story of transformation and power",
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 120,
-        genre: "Mythology/Fantasy",
-        rating: 4.7,
-        aiMatch: 89,
-        aiReason: "Mythology retellings match your literary preferences",
-        pages: 393,
-        aiAnalysis: "Pattern recognition indicates strong affinity for reimagined classical stories."
-      },
-      {
-        _id: '507f1f77bcf86cd799439015',
-        book_id: '507f1f77bcf86cd799439015',
-        user_id: '507f1f77bcf86cd799439005',
-        bookName: "Klara and the Sun",
-        authorName: "Kazuo Ishiguro",
-        bookCondition: 'Very Good',
-        bookImages: ["https://images.unsplash.com/photo-1589998059171-988d887df646?w=300&h=450&fit=crop"],
-        description: "An artificial friend observes the world with wonder",
-        is_taken: false,
-        created_at: new Date().toISOString(),
-        view_count: 95,
-        genre: "Literary Fiction",
-        rating: 4.5,
-        aiMatch: 86,
-        aiReason: "Literary fiction with emotional depth",
-        pages: 303,
-        aiAnalysis: "Your preference for nuanced storytelling aligns with Ishiguro's style."
-      }
-    ];
-  }
-
   viewBookDetails(book: EnhancedBook) {
     const bookId = book._id || book.book_id;
     if (bookId) {
@@ -263,33 +260,21 @@ export class AiPicksComponent implements OnInit {
     }
   }
 
-  addToWishlist(book: EnhancedBook) {
-    const bookId = book._id || book.book_id;
-    if (bookId) {
-      this.bookService.trackInteraction(bookId, 'wishlist').subscribe({
-        next: () => {
-          console.log('Added to wishlist:', book.bookName);
-        },
-        error: (error) => {
-          console.error('Error adding to wishlist:', error);
-        }
-      });
-    }
-  }
-
   generateNewRecommendations() {
     this.generating = true;
+    console.log('🔄 Generating new AI recommendations...');
     
     this.aiService.generateRecommendations(this.currentUserId).subscribe({
       next: (response) => {
-        console.log('Generated recommendations:', response);
+        console.log('✅ Generated recommendations:', response);
         setTimeout(() => {
+          this.loadBookMatches();
           this.loadAIRecommendations();
           this.loadAIInsights();
         }, 1000);
       },
       error: (error) => {
-        console.error('Error generating recommendations:', error);
+        console.error('❌ Error generating recommendations:', error);
       },
       complete: () => {
         this.generating = false;

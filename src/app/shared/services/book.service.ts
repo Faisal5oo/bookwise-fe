@@ -35,6 +35,16 @@ export class BookService {
     return this.http.get<Book>(`${this.apiUrl}/books/${bookId}`);
   }
 
+  // Search books by query - for navbar search functionality
+  searchBooksByQuery(query: string, skip = 0, limit = 20): Observable<BookApiResponse> {
+    const params = new HttpParams()
+      .set('q', query)
+      .set('skip', skip.toString())
+      .set('limit', limit.toString());
+    
+    return this.http.get<BookApiResponse>(`${this.apiUrl}/books/search`, { params });
+  }
+
   // Add new book - matches backend /books/
   addBook(book: PostBookModel): Observable<any> {
     console.log('Adding book to backend:', book);
@@ -102,5 +112,15 @@ export class BookService {
   // Update book status
   updateBookStatus(bookId: string, isTaken: boolean): Observable<BookApiResponse> {
     return this.updateBook(bookId, { is_taken: isTaken });
+  }
+
+  // Get all available genres - matches backend /books/genres
+  getAllGenres(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/books/genres`);
+  }
+
+  // Get all available authors - matches backend /books/authors
+  getAllAuthors(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/books/authors`);
   }
 } 

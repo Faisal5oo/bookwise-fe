@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { AIService, AIRecommendation } from '../services/ai.service';
+import { AIService, AIRecommendation, ChatMessage as AIChatMessage, ChatRequest } from '../services/ai.service';
 import { AuthService } from '../services/auth.service';
 import { BookService } from '../services/book.service';
+import { PreferencesService, UserPreferences } from '../services/preferences.service';
 import { environment } from '../../../environments/environment';
 
 interface ChatMessage {
@@ -15,6 +16,7 @@ interface ChatMessage {
   isTyping?: boolean;
   recommendations?: AIRecommendation[];
   books?: any[];
+  bookMatches?: any[];
 }
 
 @Component({
@@ -32,26 +34,48 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   currentMessage = '';
   messages: ChatMessage[] = [];
   isLoading = false;
-  conversationHistory: any[] = [];
+  conversationHistory: AIChatMessage[] = [];
+  userPreferences: UserPreferences | null = null;
   
   constructor(
     private http: HttpClient,
     private aiService: AIService,
     private authService: AuthService,
-    private bookService: BookService
+    private bookService: BookService,
+    private preferencesService: PreferencesService
   ) {}
 
   ngOnInit() {
     this.initializeChat();
+    this.loadUserPreferences();
   }
 
   ngOnDestroy() {
   }
 
+  async loadUserPreferences() {
+    const userId = this.authService.getUserId();
+    if (userId) {
+      try {
+        this.userPreferences = await this.preferencesService.getUserPreferences(userId).toPromise() || null;
+      } catch (error) {
+        console.log('No user preferences found, will use defaults');
+        this.userPreferences = null;
+      }
+    }
+  }
+
   initializeChat() {
     const userName = this.authService.getCurrentUser()?.fname || 'there';
     this.addBotMessage(
-      `Hi ${userName}! I'm BookWise AI Assistant! 📚 I'm here to help you with personalized book recommendations, answer questions about literature, or chat about your reading interests. I can even generate custom recommendations based on your reading history! How can I help you today?`
+      `Hi ${userName}! I'm BookWise AI Assistant! 📚 I'm here to help you with personalized book recommendations based on your reading preferences. You can ask me things like:
+
+• "Recommend me some fantasy books"
+• "I like mystery novels, what do you have?"
+• "Show me books by Stephen King"
+• "What's trending right now?"
+
+How can I help you today?`
     );
   }
 
@@ -86,16 +110,15 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     try {
       const userId = this.authService.getUserId();
       
+      // Add to conversation history
       this.conversationHistory.push({
-        role: 'user',
-        content: userMessage,
+        type: 'user',
+        message: userMessage,
         timestamp: new Date().toISOString()
       });
 
-      if (this.isAskingForRecommendations(userMessage) && userId) {
-        await this.handleRecommendationRequest(userMessage, userId);
-      } else if (userId) {
-        await this.handleAIResponse(userMessage, userId);
+      if (userId) {
+        await this.handleAIChat(userMessage, userId);
       } else {
         await this.handleGuestResponse(userMessage);
       }
@@ -110,87 +133,87 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async handleAIChat(message: string, userId: string) {
+    try {
+      const chatRequest: ChatRequest = {
+        message: message,
+        conversation_history: this.conversationHistory
+      };
+
+      const response = await this.aiService.sendChatMessage(userId, chatRequest).toPromise();
+      
+      this.removeTypingIndicator();
+      
+      if (response) {
+        // Add AI response to conversation history
+        this.conversationHistory.push({
+          type: 'ai',
+          message: response.response,
+          timestamp: response.timestamp
+        });
+
+        // If there are recommendations, fetch book details
+        if (response.recommendations && response.recommendations.length > 0) {
+          const bookPromises = response.recommendations.slice(0, 5).map(rec => 
+            this.bookService.getBook(rec.book_id).toPromise().catch(() => null)
+          );
+          
+          const books = await Promise.all(bookPromises);
+          const validBooks = books.filter(book => book !== null);
+
+          this.addBotMessage(response.response, response.recommendations, validBooks);
+        } else {
+          this.addBotMessage(response.response);
+        }
+
+        // If the user is asking for recommendations, also try to get book matches
+        if (this.isAskingForRecommendations(message)) {
+          try {
+            const bookMatches = await this.aiService.getBookMatches(userId).toPromise();
+            if (bookMatches && bookMatches.length > 0) {
+              const matchMessage = `\n\n🎯 **Top Book Matches for You:**\n\nBased on your preferences, here are some highly recommended books:`;
+              this.addBotMessage(matchMessage, undefined, undefined, bookMatches.slice(0, 3));
+            }
+          } catch (matchError) {
+            console.log('Could not load book matches:', matchError);
+          }
+        }
+      } else {
+        this.addBotMessage("I'm sorry, I didn't get a response. Please try again!");
+      }
+    } catch (error) {
+      console.error('Error getting AI chat response:', error);
+      this.removeTypingIndicator();
+      
+      // Fallback to Gemini API
+      try {
+        const fallbackResponse = await this.callGeminiAPI(message);
+        this.addBotMessage(fallbackResponse);
+      } catch (fallbackError) {
+        this.addBotMessage(
+          "I'm having trouble connecting to my AI brain right now. Please try again in a moment! 🤖"
+        );
+      }
+    }
+  }
+
   private isAskingForRecommendations(message: string): boolean {
     const lowerMessage = message.toLowerCase();
     return lowerMessage.includes('recommend') || 
            lowerMessage.includes('suggestion') || 
            lowerMessage.includes('suggest') ||
            lowerMessage.includes('what should i read') ||
-           lowerMessage.includes('books for me');
-  }
-
-  private async handleRecommendationRequest(message: string, userId: string) {
-    try {
-      const recommendations = await this.aiService.getChatbotRecommendations(
-        userId, 
-        message, 
-        this.conversationHistory
-      ).toPromise();
-
-      this.removeTypingIndicator();
-
-      if (recommendations && recommendations.length > 0) {
-        const bookPromises = recommendations.slice(0, 3).map(rec => 
-          this.bookService.getBook(rec.book_id).toPromise().catch(() => null)
-        );
-        
-        const books = await Promise.all(bookPromises);
-        const validBooks = books.filter(book => book !== null);
-
-        this.addBotMessage(
-          "Based on your reading history and preferences, here are some personalized recommendations I think you'll love! 📚✨",
-          recommendations,
-          validBooks
-        );
-      } else {
-        this.addBotMessage(
-          "I'd love to help with recommendations! Let me know what genres you enjoy, and I can suggest some great books for you! 📖"
-        );
-      }
-    } catch (error) {
-      console.error('Error getting AI recommendations:', error);
-      this.removeTypingIndicator();
-      this.addBotMessage(
-        "I'm having trouble getting personalized recommendations right now, but I'd still love to help! What genres do you enjoy? 📚"
-      );
-    }
-  }
-
-  private async handleAIResponse(message: string, userId: string) {
-    try {
-      const response = await this.aiService.getChatbotResponse(
-        userId, 
-        message, 
-        this.conversationHistory
-      ).toPromise();
-
-      this.removeTypingIndicator();
-      
-      if (response?.content) {
-        this.addBotMessage(response.content);
-        
-        this.conversationHistory.push({
-          role: 'assistant',
-          content: response.content,
-          timestamp: new Date().toISOString()
-        });
-      } else {
-        const fallbackResponse = await this.callGeminiAPI(message);
-        this.addBotMessage(fallbackResponse);
-      }
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      const fallbackResponse = await this.callGeminiAPI(message);
-      this.removeTypingIndicator();
-      this.addBotMessage(fallbackResponse);
-    }
+           lowerMessage.includes('books for me') ||
+           lowerMessage.includes('book match') ||
+           lowerMessage.includes('pick') ||
+           lowerMessage.includes('find me');
   }
 
   private async handleGuestResponse(message: string) {
     try {
       const response = await this.callGeminiAPI(message);
       this.removeTypingIndicator();
-      this.addBotMessage(response);
+      this.addBotMessage(response + "\n\n💡 For personalized book recommendations, please sign up or log in!");
     } catch (error) {
       this.removeTypingIndicator();
       this.addBotMessage(
@@ -293,14 +316,15 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     setTimeout(() => this.scrollToBottom(), 100);
   }
 
-  private addBotMessage(content: string, recommendations?: AIRecommendation[], books?: any[]) {
+  private addBotMessage(content: string, recommendations?: AIRecommendation[], books?: any[], bookMatches?: any[]) {
     const message: ChatMessage = {
       id: this.generateId(),
       content,
       isUser: false,
       timestamp: new Date(),
       recommendations,
-      books
+      books,
+      bookMatches
     };
     this.messages.push(message);
     setTimeout(() => this.scrollToBottom(), 100);

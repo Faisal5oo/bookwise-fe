@@ -12,21 +12,23 @@
         </div>
       </div>
 
-      <!-- Search Bar -->
-      <div class="flex-1 max-w-md mx-8">
-        <div class="relative">
+      <!-- Search Bar - Hidden on mobile -->
+      <div class="hidden md:flex flex-1 max-w-md mx-8">
+        <div class="relative w-full">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </div>
           <input type="text" placeholder="Search books..." 
+                 [(ngModel)]="searchQuery"
+                 (keypress)="onSearchKeyPress($event)"
                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bookwise-orange focus:border-transparent">
         </div>
       </div>
 
-      <!-- Navigation Links for Logged In Users -->
-      <div *ngIf="isAuthenticated" class="flex items-center space-x-6">
+      <!-- Desktop Navigation Links for Logged In Users -->
+      <div *ngIf="isAuthenticated" class="hidden lg:flex items-center space-x-6">
         <a routerLink="/browse" routerLinkActive="text-bookwise-orange" class="text-gray-700 hover:text-bookwise-orange font-medium transition-colors">Browse</a>
         <a routerLink="/my-exchanges" routerLinkActive="text-bookwise-orange" class="text-gray-700 hover:text-bookwise-orange font-medium transition-colors">My Exchanges</a>
         <a routerLink="/ai-picks" routerLinkActive="text-bookwise-orange" class="text-gray-700 hover:text-bookwise-orange font-medium transition-colors">AI Picks</a>
@@ -46,7 +48,7 @@
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
             </div>
-            <span class="font-medium">{{ currentUser?.fname }}</span>
+            <span class="hidden xl:block font-medium">{{ currentUser?.fname }}</span>
             <svg class="w-4 h-4 transition-transform duration-200" [class.rotate-180]="showProfileDropdown" fill="currentColor" viewBox="0 0 24 24">
               <path d="M7 10l5 5 5-5z"/>
             </svg>
@@ -82,12 +84,97 @@
         </div>
       </div>
 
-      <!-- Navigation Links for Non-Logged In Users -->
-      <div *ngIf="!isAuthenticated" class="flex items-center space-x-6">
+      <!-- Desktop Navigation Links for Non-Logged In Users -->
+      <div *ngIf="!isAuthenticated" class="hidden md:flex items-center space-x-6">
         <a routerLink="/browse" routerLinkActive="text-bookwise-orange" class="text-gray-700 hover:text-bookwise-orange font-medium transition-colors">Browse</a>
         
         <!-- Sign Up Button -->
-        <a routerLink="/auth" class="bg-gradient-to-r from-bookwise-orange to-bookwise-brown text-white px-6 py-2 rounded-lg font-medium hover:from-bookwise-brown hover:to-bookwise-orange transition-all duration-200">
+        <a routerLink="/auth" class="bg-gradient-to-r from-bookwise-orange to-bookwise-brown text-white px-4 py-2 rounded-lg font-medium hover:from-bookwise-brown hover:to-bookwise-orange transition-all duration-200">
+          Sign Up / Login
+        </a>
+      </div>
+
+      <!-- Mobile menu button -->
+      <div class="lg:hidden">
+        <button 
+          (click)="toggleMobileMenu()"
+          class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-bookwise-orange hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-bookwise-orange transition-colors">
+          <svg class="w-6 h-6" [class.hidden]="showMobileMenu" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <svg class="w-6 h-6" [class.hidden]="!showMobileMenu" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div *ngIf="showMobileMenu" class="lg:hidden border-t border-gray-200 pt-4 pb-3 space-y-1">
+      <!-- Mobile Search Bar -->
+      <div class="px-3 pb-3">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <input type="text" placeholder="Search books..." 
+                 [(ngModel)]="searchQuery"
+                 (keypress)="onSearchKeyPress($event)"
+                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bookwise-orange focus:border-transparent">
+        </div>
+      </div>
+
+      <!-- Mobile Navigation Links for Logged In Users -->
+      <div *ngIf="isAuthenticated" class="space-y-1">
+        <a routerLink="/browse" 
+           (click)="closeMobileMenu()"
+           routerLinkActive="bg-bookwise-orange text-white" 
+           class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-bookwise-orange hover:bg-gray-50 transition-colors">
+          Browse Books
+        </a>
+        <a routerLink="/my-exchanges" 
+           (click)="closeMobileMenu()"
+           routerLinkActive="bg-bookwise-orange text-white" 
+           class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-bookwise-orange hover:bg-gray-50 transition-colors">
+          My Exchanges
+        </a>
+        <a routerLink="/ai-picks" 
+           (click)="closeMobileMenu()"
+           routerLinkActive="bg-bookwise-orange text-white" 
+           class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-bookwise-orange hover:bg-gray-50 transition-colors">
+          AI Picks
+        </a>
+        <a routerLink="/add-book" 
+           (click)="closeMobileMenu()"
+           class="block px-3 py-2 text-base font-medium bg-bookwise-orange text-white rounded-lg mx-3 text-center hover:bg-bookwise-brown transition-colors">
+          + Add Book
+        </a>
+        <a routerLink="/profile" 
+           (click)="closeMobileMenu()"
+           routerLinkActive="bg-bookwise-orange text-white" 
+           class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-bookwise-orange hover:bg-gray-50 transition-colors">
+          Profile
+        </a>
+        <button 
+          (click)="logout()" 
+          class="w-full text-left block px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 transition-colors">
+          Logout
+        </button>
+      </div>
+
+      <!-- Mobile Navigation Links for Non-Logged In Users -->
+      <div *ngIf="!isAuthenticated" class="space-y-1">
+        <a routerLink="/browse" 
+           (click)="closeMobileMenu()"
+           routerLinkActive="bg-bookwise-orange text-white" 
+           class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-bookwise-orange hover:bg-gray-50 transition-colors">
+          Browse Books
+        </a>
+        <a routerLink="/auth" 
+           (click)="closeMobileMenu()"
+           class="block px-3 py-2 text-base font-medium bg-gradient-to-r from-bookwise-orange to-bookwise-brown text-white rounded-lg mx-3 text-center hover:from-bookwise-brown hover:to-bookwise-orange transition-all duration-200">
           Sign Up / Login
         </a>
       </div>
