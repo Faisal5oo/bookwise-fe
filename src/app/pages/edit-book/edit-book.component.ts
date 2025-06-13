@@ -25,10 +25,38 @@ export class EditBookComponent implements OnInit {
     description: '',
     bookCondition: 'Good',
     bookImages: [],
-    is_taken: false
+    is_taken: false,
+    genre: ''
   };
 
   conditions = ['Excellent', 'Good', 'Fair', 'Poor'];
+  genres = [
+    'Fiction',
+    'Non-Fiction',
+    'Mystery',
+    'Romance',
+    'Science Fiction',
+    'Fantasy',
+    'Biography',
+    'History',
+    'Self-Help',
+    'Business',
+    'Health',
+    'Travel',
+    'Cooking',
+    'Art',
+    'Religion',
+    'Philosophy',
+    'Poetry',
+    'Drama',
+    'Children',
+    'Young Adult',
+    'Horror',
+    'Thriller',
+    'Adventure',
+    'Comedy',
+    'Educational'
+  ];
   
   // Sample image URLs for demo purposes
   sampleImages = [
@@ -65,7 +93,8 @@ export class EditBookComponent implements OnInit {
           description: book.description,
           bookCondition: book.bookCondition || book.condition,
           bookImages: book.bookImages || book.pictures || [],
-          is_taken: book.is_taken
+          is_taken: book.is_taken,
+          genre: book.genre || ''
         };
         this.loading = false;
       },
@@ -122,6 +151,10 @@ export class EditBookComponent implements OnInit {
     
     if (this.bookData.is_taken !== undefined) {
       updateData.is_taken = this.bookData.is_taken;
+    }
+
+    if (this.bookData.genre?.trim()) {
+      updateData.genre = this.bookData.genre.trim();
     }
 
     console.log('Updating book with:', updateData);

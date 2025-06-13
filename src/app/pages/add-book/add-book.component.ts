@@ -25,10 +25,38 @@ export class AddBookComponent {
     description: '',
     bookCondition: 'Good',
     bookImages: [],
-    is_taken: false
+    is_taken: false,
+    genre: ''
   };
 
   conditions = ['Excellent', 'Good', 'Fair', 'Poor'];
+  genres = [
+    'Fiction',
+    'Non-Fiction',
+    'Mystery',
+    'Romance',
+    'Science Fiction',
+    'Fantasy',
+    'Biography',
+    'History',
+    'Self-Help',
+    'Business',
+    'Health',
+    'Travel',
+    'Cooking',
+    'Art',
+    'Religion',
+    'Philosophy',
+    'Poetry',
+    'Drama',
+    'Children',
+    'Young Adult',
+    'Horror',
+    'Thriller',
+    'Adventure',
+    'Comedy',
+    'Educational'
+  ];
   
   // Sample image URLs for demo purposes
   sampleImages = [
@@ -117,7 +145,8 @@ export class AddBookComponent {
       bookCondition: this.bookData.bookCondition,
       bookImages: this.bookData.bookImages,
       is_taken: false,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      genre: this.bookData.genre
     };
 
     console.log('Submitting book:', newBook);
@@ -181,6 +210,11 @@ export class AddBookComponent {
 
     if (!this.bookData.bookCondition) {
       this.errorMessage = 'Book condition is required';
+      return false;
+    }
+
+    if (!this.bookData.genre) {
+      this.errorMessage = 'Genre is required';
       return false;
     }
 

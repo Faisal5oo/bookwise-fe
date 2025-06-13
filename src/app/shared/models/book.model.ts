@@ -35,6 +35,7 @@ export interface PostBookModel {
   bookImages: string[];
   is_taken?: boolean;
   created_at?: string;
+  genre: string;
 }
 
 export interface UpdateBookModel {
@@ -44,6 +45,7 @@ export interface UpdateBookModel {
   bookCondition?: string;
   bookImages?: string[];
   is_taken?: boolean;
+  genre?: string;
 }
 
 export interface BookSearchParams {
